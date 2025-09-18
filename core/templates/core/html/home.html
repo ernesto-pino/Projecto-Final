@@ -1,0 +1,44 @@
+{% extends "core/html/base.html" %}
+
+{% block title %}Inicio – MiHora Lampa{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row g-4 justify-content-center">
+    <!-- Card 1 -->
+    <div class="col-12 col-md-4">
+      <div class="mihora-card text-center">
+        <div class="mihora-card-icon">
+          <i class="bi bi-file-earmark-text-fill"></i>
+        </div>
+        <div class="mihora-card-footer">
+          Noticias y Actividades
+        </div>
+      </div>
+    </div>
+    <!-- Card 2 -->
+    <div class="col-12 col-md-4">
+      <div class="mihora-card text-center">
+        <div class="mihora-card-icon">
+          <i class="bi bi-calendar-event-fill"></i>
+        </div>
+        <div class="mihora-card-footer">
+          Ver mis citas
+        </div>
+      </div>
+    </div>
+    <!-- Card 3 -->
+    <div class="col-12 col-md-4">
+      <div class="mihora-card text-center">
+        <div class="mihora-card-icon">
+          <i class="bi bi-person-lines-fill"></i>
+        </div>
+        <div class="mihora-card-footer">
+          Actualizar mis datos
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

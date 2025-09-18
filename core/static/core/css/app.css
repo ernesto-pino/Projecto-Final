@@ -1,0 +1,247 @@
+/* ===== Paleta institucional ===== */
+:root {
+    --mihora-azul: #4D6EB4;
+    --mihora-azul-oscuro: #547aca;
+    --bs-primary: #0069d9;
+    /* para utilidades Bootstrap */
+}
+
+/* ===== Fuente global ===== */
+body {
+    font-family: "Alan Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+/* ===== Topbar ===== */
+.bg-zona {
+    background-color: var(--mihora-azul) !important;
+}
+
+.topbar {
+    font-size: .9rem;
+}
+
+.topbar a {
+    text-decoration: none;
+}
+
+@media (max-width: 576px) {
+    .topbar {
+        font-size: .85rem;
+        padding-top: .35rem !important;
+        padding-bottom: .35rem !important;
+    }
+}
+
+/* ===== Navbar ===== */
+.navbar-institucion {
+    background-color: #fff !important;
+    border-bottom: 1px solid rgba(0, 0, 0, .06);
+    z-index: 1030;
+}
+
+.navbar-institucion .navbar-brand,
+.navbar-institucion .nav-link {
+    color: #000 !important;
+}
+
+.navbar-institucion .nav-link:hover,
+.navbar-institucion .nav-link:focus {
+    color: var(--mihora-azul) !important;
+}
+
+/* Toggler visible sobre blanco */
+.navbar-institucion.navbar-light .navbar-toggler {
+    border-color: rgba(0, 0, 0, .25);
+}
+
+/* Menú móvil: no se superpone con el carrusel */
+@media (max-width: 991.98px) {
+    .navbar-institucion .navbar-collapse {
+        background: #fff;
+        padding: .5rem 1rem;
+        border-top: 1px solid rgba(0, 0, 0, .06);
+    }
+
+    .navbar-institucion .navbar-nav .nav-link {
+        padding: .75rem 1rem;
+        text-align: center;
+    }
+}
+
+/* Escritorio: 3 columnas (logo | nav centrado | login) */
+@media (min-width: 992px) {
+    .navbar-institucion .container {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        position: relative;
+    }
+
+    #mainNav {
+        display: contents;
+    }
+
+    .nav-center {
+        display: flex;
+        justify-content: center;
+    }
+
+    .nav-auth {
+        justify-self: end;
+    }
+}
+
+/* Login: icono en cuadrado azul */
+.nav-auth .login-icon {
+    background-color: var(--mihora-azul);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    text-decoration: none;
+    padding: 0;
+}
+
+.nav-auth .login-icon i {
+    color: #fff !important;
+    font-size: 1.25rem;
+}
+
+.nav-auth .login-icon:hover {
+    background-color: var(--mihora-azul-oscuro);
+}
+
+/* ===== Carrusel ===== */
+.carousel-item img {
+    max-height: 420px;
+    object-fit: cover;
+}
+
+@media (max-width: 576px) {
+    .carousel-item img {
+        max-height: 260px;
+    }
+
+    .carousel-caption {
+        font-size: .9rem;
+    }
+}
+
+/* ===== Fix: nav-auth centrado en móvil ===== */
+@media (max-width: 991.98px) {
+    .navbar-institucion .nav-auth {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        margin-left: 0 !important;
+    }
+
+    .navbar-institucion .nav-auth .nav-item {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+
+body {
+    font-family: "Alan Sans", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+}
+
+/* Contenedor cuadrado azul */
+.nav-auth .login-icon {
+    background-color: #4D6EB4;
+    /* color institucional */
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    /* 0 = cuadrado duro */
+    text-decoration: none;
+    /* sin subrayado */
+    padding: 0;
+    /* quita padding del nav-link */
+}
+
+/* El ícono siempre blanco */
+.nav-auth .login-icon i {
+    color: #fff !important;
+    font-size: 1.2rem;
+}
+
+/* Hover */
+.nav-auth .login-icon:hover {
+    background-color: #547aca;
+}
+
+
+/* Centrado real solo en escritorio */
+@media (min-width: 992px) {
+    .navbar-institucion .nav-center {
+        display: flex;
+        justify-content: center;
+        /* centra horizontal */
+        width: 100%;
+        /* ocupa toda la columna */
+    }
+}
+
+/* En móvil, el icono login se muestra como un item más de la lista */
+@media (max-width: 991.98px) {
+    .nav-auth {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        /* centrado */
+        margin-top: .5rem;
+    }
+
+    .nav-auth .login-icon {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* Navbar con direccion azul */
+.bg-zona {
+    background-color: #4D6EB4 !important;
+    /* un verde azulado */
+}
+
+/* ===== Cards azules ===== */
+.mihora-card {
+  background-color: var(--mihora-azul);
+  color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  overflow: hidden;
+  transition: transform .2s ease, box-shadow .2s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mihora-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+}
+
+.mihora-card-icon {
+  font-size: 4rem;
+  padding: 2rem 1rem;
+}
+
+.mihora-card-footer {
+  background: #fff;
+  color: var(--mihora-azul);
+  font-weight: 600;
+  padding: .75rem;
+}
