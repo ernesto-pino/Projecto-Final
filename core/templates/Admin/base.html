@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Panel{% endblock %} · MiHora Lampa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+</head>
+<body>
+  <header class="topbar">
+    <strong>MiHora Lampa</strong>
+    <nav>
+      {% if request.user.is_authenticated %}
+        Hola, {{ request.user.username }} · <a href="{% url 'logout' %}">Salir</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

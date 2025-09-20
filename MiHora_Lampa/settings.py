@@ -51,11 +51,14 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'MiHora_Lampa.urls'
+LOGIN_URL = "/ingreso/"
+LOGIN_REDIRECT_URL = "/entrar/"
+LOGOUT_REDIRECT_URL = "/ingreso/"
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
