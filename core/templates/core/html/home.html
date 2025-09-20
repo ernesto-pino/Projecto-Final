@@ -3,6 +3,13 @@
 {% block title %}Inicio – MiHora Lampa{% endblock %}
 
 {% block content %}
+
+<div class="container py-5 text-center">
+  <h2 class="section-title">
+    Bienvenido al Portal <strong>COSAM Lampa</strong>
+  </h2>
+</div>
+
 <div class="container py-5">
   <div class="row g-4 justify-content-center">
     <!-- Card 1 -->
@@ -40,5 +47,32 @@
     </div>
   </div>
 </div>
+
+<!-- Ideal seria crear un formulario para que el admin cambie los links manualmente  -->
+
+<section class="insta-section py-5">
+  <div class="container text-center">
+    <h2 class="section-title">Últimas publicaciones</h2>
+
+    <div class="row g-4 justify-content-center">
+      <div class="col-12 col-md-4 d-flex justify-content-center">
+        <div class="insta-embed">
+          <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DOMFf9ZkYon/"
+            data-instgrm-version="14"></blockquote>
+        </div>
+      </div>
+      <div class="col-12 col-md-4 d-flex justify-content-center">
+        <div class="insta-embed">
+          <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DNmUuUhtp0q/"
+            data-instgrm-version="14"></blockquote>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script async src="//www.instagram.com/embed.js"></script>
+
+
 
 {% endblock %}
