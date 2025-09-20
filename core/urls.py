@@ -11,8 +11,7 @@ urlpatterns = [
     path("entrar/", views.dispatch_por_rol, name="dispatch_por_rol"),
     path("admin/login/", views.admin_login_gate, name="admin_login_gate"),
 
-
+    #paneles por rol
     path("panel/recepcion/", views.recepcion_home, name="recepcion_home"),
     path("panel/profesional/", views.profesional_home, name="profesional_home"),
-    path("panel/auditor/", views.auditor_home, name="auditor_home"),
 ]
