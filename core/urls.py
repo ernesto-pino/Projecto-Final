@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib import admin
 
 urlpatterns = [
     path("", views.home, name="home"),
@@ -14,4 +15,6 @@ urlpatterns = [
     #paneles por rol
     path("panel/recepcion/", views.recepcion_home, name="recepcion_home"),
     path("panel/profesional/", views.profesional_home, name="profesional_home"),
+    #panel admin
+    path('admin/', admin.site.urls),
 ]
