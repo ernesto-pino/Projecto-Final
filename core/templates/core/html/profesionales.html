@@ -11,8 +11,7 @@
       <select class="form-select" name="especialidad" onchange="this.form.submit()">
         <option value="">Todas las especialidades</option>
         {% for e in especialidades %}
-          <option value="{{ e.id }}"
-            {% if selected_esp|add:'' == e.id|add:'' %}selected{% endif %}>
+          <option value="{{ e.id }}"{% if e.id|stringformat:'s' == selected_esp|default:'' %}selected{% endif %}>
             {{ e.nombre }}
           </option>
         {% endfor %}

@@ -41,28 +41,40 @@ def admin_login_gate(request):
 # Llamar lista de profesionales para mostrar a los pacientes;
 
 def profesionales_list(request):
-    esp_param = request.GET.get("especialidad", "").strip()
+# Parámetros GET
+    esp_param = (request.GET.get("especialidad") or "").strip()
+    q_param   = (request.GET.get("q") or "").strip()
 
     # Base: solo activos
     qs = Profesional.objects.select_related("especialidad").filter(activo=True)
 
-    # Si viene un id de especialidad, filtramos
-    if esp_param.isdigit():
-        qs = qs.filter(especialidad_id=int(esp_param))
+    # Filtro por especialidad (si viene un id válido)
+    if esp_param:
+        try:
+            esp_id = int(esp_param)
+            qs = qs.filter(especialidad_id=esp_id)
+        except ValueError:
+            pass  # ignora valores no numéricos
+
+    # (Opcional) Buscador por nombre/apellido
+    if q_param:
+        qs = qs.filter(
+            Q(nombre__icontains=q_param) | Q(apellido__icontains=q_param)
+        )
 
     profesionales = qs.order_by("apellido", "nombre")
 
-    # Para el <select>
+    # Para rellenar el <select> (todas las especialidades)
     especialidades = Especialidad.objects.order_by("nombre").values("id", "nombre")
 
     ctx = {
         "profesionales": profesionales,
         "especialidades": especialidades,
-        "selected_esp": esp_param,  # para marcar selected en el template
+        "selected_esp": esp_param,  # lo usamos para marcar el selected
+        "q": q_param,
     }
     return render(request, "core/html/profesionales.html", ctx)
 
 
 def custom_404(request, exception=None):
-    # OJO: usa la ruta real de tu template
     return render(request, "core/html/404.html", status=404)
