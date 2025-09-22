@@ -276,3 +276,13 @@ body {
         padding: .25rem .5rem;
     }
 }
+
+.btn-primary {
+    background-color: #0066cc !important;
+    border-color: #0066cc !important;
+}
+
+.btn-primary:hover {
+    background-color: #004c99 !important;
+    border-color: #004c99 !important;
+}

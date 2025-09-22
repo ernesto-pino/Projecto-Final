@@ -7,6 +7,8 @@ from .forms import CustomPasswordResetForm, CustomSetPasswordForm
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("profesionales/", views.profesionales_list, name="profesionales"),
+
 
     #funciones de login y logout
     path("ingreso/", LoginView.as_view(template_name="admin/ingreso.html", redirect_authenticated_user=True), name="login"),
