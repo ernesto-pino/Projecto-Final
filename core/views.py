@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .utils import user_has_role
 from .decorators import role_required
+from .models import Profesional
+
 
 #renderizado de paginas
 def home(request):
@@ -34,3 +36,16 @@ def admin_login_gate(request):
             return redirect("/admin/")          # entra al admin clásico
         return redirect("dispatch_por_rol")      # tu dispatcher por rol (/entrar/)
     return redirect("login")  # name de tu ruta /ingreso/
+
+
+# Llamar lista de profesionales para mostrar a los pacientes;
+
+def profesionales_list(request):
+    profesionales = (
+        Profesional.objects
+        .select_related('especialidad')
+        .filter(activo=True)
+        .order_by('apellido', 'nombre')
+        .only('nombre','apellido','email','telefono','especialidad__nombre')
+    )
+    return render(request, "core/html/profesionales.html", {"profesionales": profesionales})

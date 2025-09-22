@@ -276,22 +276,3 @@ body {
         padding: .25rem .5rem;
     }
 }
-
-/* Fondo gris claro para la sección Instagram */
-.insta-section {
-    background-color: #1b4f83;
-}
-
-/* Caja que envuelve cada embed */
-.insta-embed {
-    max-width: 320px;
-    /* limita el ancho */
-    width: 100%;
-    max-width: 340px;
-    width: 100%;
-    margin: 0 auto;
-    background-color: #f8f9fa;
-    /* gris claro */
-    border-radius: 8px;
-    padding: 1rem;
-}
