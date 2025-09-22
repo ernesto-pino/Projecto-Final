@@ -43,9 +43,9 @@ def admin_login_gate(request):
 def profesionales_list(request):
     profesionales = (
         Profesional.objects
-        .select_related('especialidad')
+        .select_related('especialidad')   # hace el JOIN
         .filter(activo=True)
         .order_by('apellido', 'nombre')
-        .only('nombre','apellido','email','telefono','especialidad__nombre')
+        # sin .only()
     )
     return render(request, "core/html/profesionales.html", {"profesionales": profesionales})
