@@ -1,18 +1,26 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8">
   <title>{% block title %}Panel{% endblock %} · MiHora Lampa</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  {% load static %}
-  <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="{% static 'core/img/logo_lampa.png' %}">
+
+
+  <link rel="stylesheet" href="{% static 'core/css/admin.css' %}">
+  {% block style %}{% endblock %}
 </head>
+
 <body>
   <header class="topbar">
     <strong>MiHora Lampa</strong>
     <nav>
       {% if request.user.is_authenticated %}
-        Hola, {{ request.user.username }} · <a href="{% url 'logout' %}">Salir</a>
+      Hola, {{ request.user.username }} · <a href="{% url 'logout' %}">Salir</a>
       {% endif %}
     </nav>
   </header>
@@ -20,4 +28,5 @@
     {% block content %}{% endblock %}
   </main>
 </body>
+
 </html>

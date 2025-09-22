@@ -1,22 +1,55 @@
 {% extends "admin/base.html" %}
+{% load static %}
+
+{% block bodyclass %}login-page{% endblock %}
+
+
+
 {% block title %}Ingresar{% endblock %}
+
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'core/css/admin.css' %}?v=1">
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="{% static 'core/img/logo_lampa.png' %}">
+
+{% endblock %}
+
+
 {% block content %}
-<h1>Ingresar</h1>
-<form method="post" action="{% url 'login' %}" class="card">
-  {% csrf_token %}
-  {% if form.non_field_errors %}
-    <div class="alert">{{ form.non_field_errors }}</div>
-  {% endif %}
-  <label>Usuario person</label>
-  {{ form.username }}
-  <label>Contraseña</label>
-  {{ form.password }}
+<div class="login-wrap">
+  <form method="post" action="{% url 'login' %}" class="login-card">
+    {% csrf_token %}
 
-  <input type="hidden" name="next" value="{% url 'dispatch_por_rol' %}">
-  <button type="submit">Entrar</button>
-  <p class="mt-3 text-center">
-  <a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a>
-</p>
+    <div class="login-logo">
+      <img src="{% static 'core/img/logo_lampa.png' %}" alt="Logo COSAM">
+    </div>
 
-</form>
+    <h1 class="login-title">Ingresar</h1>
+    <p class="login-subtitle">Accede con tu usuario y contraseña institucional.</p>
+
+    {% if form.non_field_errors %}
+    <div class="login-alert">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="login-field">
+      <label for="{{ form.username.id_for_label }}" class="login-label">Usuario</label>
+      {{ form.username }}
+    </div>
+
+    <div class="login-field">
+      <label for="{{ form.password.id_for_label }}" class="login-label">Contraseña</label>
+      {{ form.password }}
+    </div>
+
+    <input type="hidden" name="next" value="{% url 'dispatch_por_rol' %}">
+
+    <button type="submit" class="login-btn">Entrar</button>
+    <p class="login-links">
+      <a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a>
+    </p>
+  </form>
+</div>
 {% endblock %}
