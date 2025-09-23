@@ -1,0 +1,3 @@
+pillow
+pip install psycopg2-binary
+django-admin-interface

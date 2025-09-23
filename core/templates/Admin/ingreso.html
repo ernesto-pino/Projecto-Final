@@ -2,21 +2,23 @@
 {% load static %}
 
 {% block bodyclass %}login-page{% endblock %}
-
-
-
 {% block title %}Ingresar{% endblock %}
 
+{# Desactiva dark mode si lo necesitabas #}
+{% block dark-mode-vars %}{% endblock %}
 
-{% block extrastyle %}
-{{ block.super }}
-<link rel="stylesheet" href="{% static 'core/css/admin.css' %}?v=1">
+{% block messages %}{% endblock %}
 
-<!-- Favicon -->
-<link rel="icon" type="image/png" href="{% static 'core/img/logo_lampa.png' %}">
+{% block errors %}{% endblock %}
 
+{% block extrahead %}{{ block.super }}
+<meta name="color-scheme" content="light">
 {% endblock %}
 
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'core/css/admin.css' %}?v=3">
+<link rel="icon" type="image/png" href="{% static 'core/img/logo_lampa.png' %}">
+{% endblock %}
 
 {% block content %}
 <div class="login-wrap">
@@ -30,9 +32,20 @@
     <h1 class="login-title">Ingresar</h1>
     <p class="login-subtitle">Accede con tu usuario y contraseña institucional.</p>
 
-    {% if form.non_field_errors %}
-    <div class="login-alert">{{ form.non_field_errors }}</div>
-    {% endif %}
+    <div class="login-errors">
+      {% if form.errors %}
+        {# Errores por campo #}
+        {% for field in form %}
+          {% for err in field.errors %}
+            <div class="login-alert">{{ err }}</div>
+          {% endfor %}
+        {% endfor %}
+        {# Errores no asociados a campo (credenciales inválidas, etc.) #}
+        {% for err in form.non_field_errors %}
+          <div class="login-alert">{{ err }}</div>
+        {% endfor %}
+      {% endif %}
+    </div>
 
     <div class="login-field">
       <label for="{{ form.username.id_for_label }}" class="login-label">Usuario</label>

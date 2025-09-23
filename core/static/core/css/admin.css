@@ -210,3 +210,55 @@ body.login-page #content {
     padding: 8px;
   }
 }
+
+/* ================================
+   FIX LOGIN – mantener centrado cuando aparecen errores
+   ================================ */
+
+/* 1) Mantener siempre espacio para el scroll (evita corrimiento lateral) */
+html { scrollbar-gutter: stable; }
+html { overflow-y: scroll; }
+
+/* 2) Reafirmar que el contenedor de login esté centrado SIEMPRE */
+body.login-page .login-wrap {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* 3) Asegurar que la card no se desplace con errores */
+body.login-page .login-card {
+  margin: 0 auto;
+  display: block;
+  max-width: 440px;   /* mismo límite de ancho que ya usas */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 4) Normalizar errores de Django (ul.errorlist) para que no rompan el layout */
+body.login-page ul.errorlist {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+
+  background: var(--error-bg);
+  border: 1px solid var(--error-bd);
+  color: var(--error-tx);
+}
+body.login-page ul.errorlist li {
+  margin: 0;
+  padding: 0;
+}
+
+
+/* Oculta cualquier error suelto que pinte el admin fuera de tu card */
+body.login-page #content > ul.errorlist,
+body.login-page #content > .errornote {
+  display: none !important;
+}
+
+

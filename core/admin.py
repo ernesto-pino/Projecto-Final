@@ -119,3 +119,12 @@ class ContactoCitaAdmin(admin.ModelAdmin):
     list_filter = ("canal", "resultado", "usuario")
     search_fields = ("cita__paciente__nombre", "cita__paciente__apellido", "descripcion")
     date_hierarchy = "fecha_contacto"
+
+class CustomAdminSite(admin.AdminSite):
+    class Media:
+        css = {
+            "all": ("core/css/admin_custom.css",)
+        }
+
+# Aplica el CSS al admin actual
+admin.site.__class__.Media = CustomAdminSite.Media
