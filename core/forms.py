@@ -83,3 +83,7 @@ class CustomSetPasswordForm(SetPasswordForm):
         if p1 and p2 and p1 != p2:
             raise ValidationError("Las contraseñas no coinciden.")
         return cleaned
+
+class LoginPacienteForm(forms.Form):
+    rut = forms.CharField(label="RUT", max_length=20)
+    password = forms.CharField(label="Contraseña", widget=forms.PasswordInput)

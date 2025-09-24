@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Perfil Paciente</title></head>
+<body>
+  <h1>Perfil del Paciente</h1>
+
+  <ul>
+    <li><strong>RUT:</strong> {{ paciente.rut }}</li>
+    <li><strong>Nombres:</strong> {{ paciente.nombres }}</li>
+    <li><strong>Apellidos:</strong> {{ paciente.apellidos }}</li>
+    <li><strong>Email:</strong> {{ paciente.email }}</li>
+    <li><strong>Teléfono:</strong> {{ paciente.telefono }}</li>
+    <li><strong>Activo:</strong> {{ paciente.is_active }}</li>
+    <li><strong>Debe cambiar contraseña:</strong> {{ paciente.debe_cambiar_password }}</li>
+    <li><strong>Último login:</strong> {{ paciente.last_login }}</li>
+    <li><strong>Fecha registro:</strong> {{ paciente.date_joined }}</li>
+  </ul>
+
+  <p><a href="{% url 'home' %}">Inicio</a> | 
+     <a href="{% url 'logout_paciente' %}">Cerrar sesión</a></p>
+</body>
+</html>

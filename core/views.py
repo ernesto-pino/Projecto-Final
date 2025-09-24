@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .utils import user_has_role
-from .decorators import role_required
+from .decorators import role_required, paciente_login_required
 from .models import *
-
+from django.contrib import messages
+from .forms import LoginPacienteForm
+from django.urls import reverse
 
 #renderizado de paginas
 def home(request):
@@ -78,3 +80,47 @@ def profesionales_list(request):
 
 def custom_404(request, exception=None):
     return render(request, "core/html/404.html", status=404)
+
+def login_paciente(request):
+    # Si ya está logeado como paciente, lo mandamos directo
+    if request.session.get("paciente_id"):
+        return redirect("home")
+
+    form = LoginPacienteForm(request.POST or None)
+    next_url = request.GET.get("next") or reverse("home")
+
+    if request.method == "POST" and form.is_valid():
+        rut = form.cleaned_data["rut"].strip()
+        password = form.cleaned_data["password"]
+
+        try:
+            p = Paciente.objects.get(rut=rut, is_active=True)
+        except Paciente.DoesNotExist:
+            messages.error(request, "RUT o contraseña inválidos.")
+        else:
+            if p.check_password(password):
+                # Seguridad: evitar fijación de sesión
+                request.session.cycle_key()
+                request.session["paciente_id"] = p.id
+                # Expiración opcional (ej. 4 horas)
+                # request.session.set_expiry(4 * 60 * 60)
+
+                p.last_login = timezone.now()
+                p.save(update_fields=["last_login"])
+                return redirect(next_url)
+            else:
+                messages.error(request, "RUT o contraseña inválidos.")
+
+    return render(request, "paciente/login.html", {"form": form})
+
+def logout_paciente(request):
+    request.session.pop("paciente_id", None)
+    messages.success(request, "Has cerrado sesión.")
+    return redirect("login_paciente")
+
+# VISTA DE PRUEBA (ELMINIAR Y REMPLAZAR POR PERFIL REAL)
+@paciente_login_required
+def perfil_paciente(request):
+    # Como el decorador ya validó la sesión, acá tienes el paciente listo:
+    paciente = request.paciente
+    return render(request, "paciente/perfil.html", {"paciente": paciente})

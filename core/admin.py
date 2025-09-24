@@ -80,9 +80,9 @@ class AgendaAdmin(admin.ModelAdmin):
 
 @admin.register(Paciente)
 class PacienteAdmin(admin.ModelAdmin):
-    list_display = ("id", "rut", "nombre", "apellido", "email", "telefono")
-    search_fields = ("rut", "nombre", "apellido", "email", "telefono")
-    list_filter = ("apellido",)
+    list_display = ("id", "rut", "nombres", "apellidos", "email", "telefono")
+    search_fields = ("rut", "nombres", "apellidos", "email", "telefono")
+    list_filter = ("apellidos",)
 
 
 # =========================

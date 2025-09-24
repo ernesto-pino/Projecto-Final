@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Ingreso Pacientes</title></head>
+<body>
+  <h1>Ingreso Pacientes</h1>
+
+  {% if messages %}
+    {% for m in messages %}<p >{{ m }}</p>{% endfor %}
+  {% endif %}
+
+  <form method="post">{% csrf_token %}
+    <div>{{ form.rut.label_tag }} {{ form.rut }}</div>
+    <div>{{ form.password.label_tag }} {{ form.password }}</div>
+    <button type="submit">Ingresar</button>
+  </form>
+</body>
+</html>

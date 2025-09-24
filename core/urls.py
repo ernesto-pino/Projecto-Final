@@ -44,6 +44,11 @@ urlpatterns = [
     path("panel/recepcion/", views.recepcion_home, name="recepcion_home"),
     path("panel/profesional/", views.profesional_home, name="profesional_home"),
 
+    #portal pacientes    
+    path("paciente/ingreso/", views.login_paciente, name="login_paciente"),
+    path("paciente/salir/", views.logout_paciente, name="logout_paciente"),
+    path("paciente/perfil/", views.perfil_paciente, name="perfil"),
+
     #panel admin
     path('admin/', admin.site.urls),
 ]

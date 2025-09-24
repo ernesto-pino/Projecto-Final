@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.contrib.auth.hashers import make_password, check_password
 
 # =========================
 #  ROLES (RBAC simple)
@@ -169,28 +170,39 @@ class Agenda(models.Model):
 # =========================
 
 class Paciente(models.Model):
+    rut = models.CharField(max_length=20, unique=True)
+    email = models.EmailField(null=True, blank=True)
+    nombres = models.CharField(max_length=120)
+    apellidos = models.CharField(max_length=120)
+    telefono = models.CharField(max_length=30, null=True, blank=True)
+
+    # Contraseña hasheada
+    password = models.CharField(max_length=255)
+
+    debe_cambiar_password = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
+    last_login = models.DateTimeField(null=True, blank=True)
+    date_joined = models.DateTimeField(default=timezone.now)
+
     class Meta:
-        db_table = "pacientes"
         verbose_name = "Paciente"
         verbose_name_plural = "Pacientes"
-        indexes = [
-            models.Index(fields=["email"]),
-            models.Index(fields=["apellido"]),
-        ]
+        indexes = [models.Index(fields=["rut"])]
 
-    # RUT obligatorio y único (email opcional)
-    rut = models.CharField(max_length=20, unique=True)
-    nombre = models.CharField(max_length=120)
-    apellido = models.CharField(max_length=120)
-    fecha_nacimiento = models.DateField(blank=True, null=True)
-    email = models.EmailField(max_length=190, blank=True, null=True)
-    telefono = models.CharField(max_length=30, blank=True, null=True)
+    # Helpers
+    def set_password(self, raw_password: str):
+        self.password = make_password(raw_password)
 
-    creado_en = models.DateTimeField(auto_now_add=True)
-    actualizado_en = models.DateTimeField(auto_now=True)
+    def check_password(self, raw_password: str) -> bool:
+        if not self.password:
+            return False
+        return check_password(raw_password, self.password)
+
+    def nombre_completo(self):
+        return f"{self.nombres} {self.apellidos}".strip()
 
     def __str__(self):
-        return f"{self.nombre} {self.apellido}"
+        return f"{self.rut} - {self.nombre_completo()}"
 
 
 # =========================
