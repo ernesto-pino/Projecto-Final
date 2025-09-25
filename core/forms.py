@@ -87,3 +87,23 @@ class CustomSetPasswordForm(SetPasswordForm):
 class LoginPacienteForm(forms.Form):
     rut = forms.CharField(label="RUT", max_length=20)
     password = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
+
+class CambioPasswordPacienteForm(forms.Form):
+    password_actual = forms.CharField(label="Contraseña actual", widget=forms.PasswordInput)
+    nueva_password = forms.CharField(label="Nueva contraseña", widget=forms.PasswordInput)
+    confirmar_password = forms.CharField(label="Confirmar nueva contraseña", widget=forms.PasswordInput)
+
+    def clean(self):
+        data = super().clean()
+        nueva = (data.get("nueva_password") or "").strip()
+        conf  = (data.get("confirmar_password") or "").strip()
+
+        errores = []
+        if len(nueva) < 8: errores.append("Debe tener al menos 8 caracteres.")
+        if not re.search(r"[a-z]", nueva): errores.append("Debe incluir al menos una minúscula.")
+        if not re.search(r"[A-Z]", nueva): errores.append("Debe incluir al menos una mayúscula.")
+        if not re.search(r"\d", nueva): errores.append("Debe incluir al menos un número.")
+        if not re.search(r"[^\w\s]", nueva): errores.append("Debe incluir al menos un símbolo (ej. !@#$%).")
+        if nueva != conf: errores.append("La confirmación no coincide con la nueva contraseña.")
+        if errores: raise ValidationError(errores)
+        return data

@@ -4,7 +4,7 @@ from .utils import user_has_role
 from .decorators import role_required, paciente_login_required
 from .models import *
 from django.contrib import messages
-from .forms import LoginPacienteForm
+from .forms import LoginPacienteForm, CambioPasswordPacienteForm
 from django.urls import reverse
 
 #renderizado de paginas
@@ -117,6 +117,40 @@ def logout_paciente(request):
     request.session.pop("paciente_id", None)
     messages.success(request, "Has cerrado sesión.")
     return redirect("login_paciente")
+
+def cambiar_password(request):
+    pid = request.session.get("paciente_id")
+    if not pid:
+        return redirect("login_paciente")
+
+    try:
+        paciente = Paciente.objects.get(pk=pid, is_active=True)
+    except Paciente.DoesNotExist:
+        request.session.pop("paciente_id", None)
+        return redirect("login_paciente")
+
+    form = CambioPasswordPacienteForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        actual = form.cleaned_data["password_actual"]
+        nueva  = form.cleaned_data["nueva_password"]
+
+        # validar actual correcta
+        if not paciente.check_password(actual):
+            form.add_error("password_actual", "La contraseña actual no es correcta.")
+        # evitar repetir la misma
+        elif paciente.check_password(nueva):
+            form.add_error("nueva_password", "La nueva contraseña no puede ser igual a la anterior.")
+        else:
+            paciente.set_password(nueva)
+            paciente.debe_cambiar_password = False
+            paciente.last_login = timezone.now()
+            paciente.save(update_fields=["password", "debe_cambiar_password", "last_login"])
+            messages.success(request, "Tu contraseña ha sido cambiada correctamente.")
+            return redirect("home")
+
+    return render(request, "paciente/cambiar_password.html", {"form": form})
+
+
 
 # VISTA DE PRUEBA (ELMINIAR Y REMPLAZAR POR PERFIL REAL)
 @paciente_login_required
