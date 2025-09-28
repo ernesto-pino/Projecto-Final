@@ -12,6 +12,9 @@
     <div>{{ form.rut.label_tag }} {{ form.rut }}</div>
     <div>{{ form.password.label_tag }} {{ form.password }}</div>
     <button type="submit">Ingresar</button>
+    <p class="login-links">
+      <a href="{% url 'solicitar_reset' %}">¿Olvidaste tu contraseña?</a>
+    </p>
   </form>
 </body>
 </html>

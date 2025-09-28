@@ -325,3 +325,21 @@ class ContactoCita(models.Model):
 
     def __str__(self):
         return f"{self.canal} - {self.resultado} (cita {self.cita_id})"
+    
+
+
+# =========================
+#  TOKENS DE RESTABLECIMIENTO DE CONTRASEÑA
+# =========================
+
+class PacienteResetToken(models.Model):
+    paciente = models.ForeignKey("core.Paciente", on_delete=models.CASCADE, related_name="reset_tokens")
+    # Guardamos SOLO el hash del token por seguridad
+    token_hash = models.CharField(max_length=64, unique=True)  # sha256 hex
+    created_at = models.DateTimeField(default=timezone.now)
+    used_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField()
+
+    def is_valid(self):
+        now = timezone.now()
+        return self.used_at is None and now <= self.expires_at

@@ -49,6 +49,9 @@ urlpatterns = [
     path("paciente/salir/", views.logout_paciente, name="logout_paciente"),
     path("paciente/perfil/", views.perfil_paciente, name="perfil"),
     path("cambiar-password/", views.cambiar_password, name="cambiar_password"),
+    # Recuperación de contraseña
+    path("olvido-clave/", views.solicitar_reset, name="solicitar_reset"),
+    path("restablecer/<str:token>/", views.restablecer_password, name="restablecer_password"),
 
     #panel admin
     path('admin/', admin.site.urls),

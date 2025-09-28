@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Recuperar contraseña</title></head>
+<body>
+  <h1>Recuperar contraseña</h1>
+  {% if messages %}{% for m in messages %}<p>{{ m }}</p>{% endfor %}{% endif %}
+
+  <form method="post">{% csrf_token %}
+    <div>{{ form.rut.label_tag }} {{ form.rut }} {{ form.rut.errors }}</div>
+    <button type="submit">Enviar enlace</button>
+  </form>
+
+  <p><a href="{% url 'login_paciente' %}">Volver al ingreso</a></p>
+</body>
+</html>

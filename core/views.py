@@ -1,11 +1,13 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .utils import user_has_role
+from .utils import user_has_role, crear_token_reset, obtener_token_valido
 from .decorators import role_required, paciente_login_required
 from .models import *
 from django.contrib import messages
-from .forms import LoginPacienteForm, CambioPasswordPacienteForm
+from .forms import LoginPacienteForm, CambioPasswordPacienteForm, SolicitarResetForm, ResetPasswordForm
 from django.urls import reverse
+from django.core.cache import cache
+from django.core.mail import send_mail
 
 #renderizado de paginas
 def home(request):
@@ -158,3 +160,74 @@ def perfil_paciente(request):
     # Como el decorador ya validó la sesión, acá tienes el paciente listo:
     paciente = request.paciente
     return render(request, "paciente/perfil.html", {"paciente": paciente})
+
+
+def solicitar_reset(request):
+    form = SolicitarResetForm(request.POST or None)
+
+    # (Opcional) Rate-limit simple por IP: 5 intentos por hora
+    ip = request.META.get("REMOTE_ADDR", "unknown")
+    key = f"reset-req:{ip}"
+    count = cache.get(key, 0)
+
+    if request.method == "POST" and form.is_valid():
+        if count >= 5:
+            messages.error(request, "Has alcanzado el límite de solicitudes. Inténtalo más tarde.")
+            return render(request, "paciente/solicitar_reset.html", {"form": form})
+
+        rut = form.cleaned_data["rut"].strip()
+
+        # No revelar si existe o no: respuesta siempre igual.
+        paciente = Paciente.objects.filter(rut=rut, is_active=True).first()
+        if paciente and paciente.email:
+            # Generar token y enviar correo
+            token = crear_token_reset(paciente, minutos=30)
+            link = request.build_absolute_uri(
+                reverse("restablecer_password", args=[token])
+            )
+            try:
+                send_mail(
+                    subject="Recuperación de contraseña - MiHora Lampa",
+                    message=f"Hola {paciente.nombre_completo()},\n\n"
+                            f"Usa este enlace para restablecer tu contraseña (válido por 30 minutos):\n{link}\n\n"
+                            "Si no solicitaste este cambio, ignora este mensaje.",
+                    from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                    recipient_list=[paciente.email],
+                    fail_silently=True,  # en dev no queremos romper el flujo por SMTP
+                )
+            except Exception:
+                # En desarrollo: si no hay SMTP, al menos muestra el link en consola
+                print("LINK DE RESET (DEV):", link)
+
+        # incrementar rate
+        cache.set(key, count + 1, timeout=60 * 60)  # 1 hora
+
+        messages.success(request, "Si el RUT existe y tiene correo registrado, te enviaremos un enlace para restablecer la contraseña.")
+        return redirect("login_paciente")
+
+    return render(request, "paciente/solicitar_reset.html", {"form": form})
+
+def restablecer_password(request, token):
+    token_obj = obtener_token_valido(token)
+    if not token_obj:
+        messages.error(request, "El enlace es inválido o ha expirado.")
+        return redirect("login_paciente")
+
+    form = ResetPasswordForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        nueva = form.cleaned_data["nueva_password"]
+        p = token_obj.paciente
+
+        # Si quieres obligar cambio nuevamente en ingreso, deja True;
+        # si se considera definitivo, marca False. Aquí lo pongo False:
+        p.set_password(nueva)
+        p.debe_cambiar_password = False
+        p.save(update_fields=["password", "debe_cambiar_password"])
+
+        token_obj.used_at = timezone.now()
+        token_obj.save(update_fields=["used_at"])
+
+        messages.success(request, "Tu contraseña ha sido restablecida. Ya puedes iniciar sesión.")
+        return redirect("login_paciente")
+
+    return render(request, "paciente/restablecer_password.html", {"form": form})
