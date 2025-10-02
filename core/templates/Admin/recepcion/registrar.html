@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registrar Paciente</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    .errorlist { color:#b91c1c; margin:4px 0; list-style: none; padding:0; }
+    .field { margin-bottom: 12px; }
+    label { display:block; font-weight:600; margin-bottom:4px; }
+    input, select { width: 100%; max-width: 420px; padding: 8px; }
+    .alert { padding:8px 12px; border:1px solid #ddd; margin-bottom:12px; }
+  </style>
+</head>
+<body>
+  <h1>Registrar Paciente</h1>
+
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert">{{ m }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <!-- renderiza campos normalmente -->
+    <div>
+      <label>RUT *</label>
+      {{ form.rut }} {{ form.rut.errors }}
+    </div>
+
+    <div>
+      <label>Nombres *</label>
+      {{ form.nombres }} {{ form.nombres.errors }}
+    </div>
+
+    <div>
+      <label>Apellidos *</label>
+      {{ form.apellidos }} {{ form.apellidos.errors }}
+    </div>
+
+    <div>
+      <label>Fecha de nacimiento</label>
+      {{ form.fecha_nacimiento }} {{ form.fecha_nacimiento.errors }}
+    </div>
+
+    <div>
+      <label>Teléfono</label>
+      {{ form.telefono }} {{ form.telefono.errors }}
+    </div>
+
+    <div>
+      <label>Correo</label>
+      {{ form.email }} {{ form.email.errors }}
+    </div>
+
+    <div>
+      <label>Dirección</label>
+      {{ form.direccion }} {{ form.direccion.errors }}
+    </div>
+
+    <button type="submit">Guardar</button>
+  </form>
+</body>
+</html>

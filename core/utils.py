@@ -1,8 +1,7 @@
-import secrets, hashlib
+import secrets, hashlib, string
 from datetime import timedelta
 from django.utils import timezone
 from .models import PacienteResetToken
-
 
 def user_has_role(user, nombre_rol: str) -> bool:
     """
@@ -37,3 +36,7 @@ def obtener_token_valido(token_plano: str):
     except PacienteResetToken.DoesNotExist:
         return None
     return obj if obj.is_valid() else None
+
+def generar_password(longitud=10):
+    alfabeto = string.ascii_letters + string.digits + "!@#$%&*"
+    return "".join(secrets.choice(alfabeto) for _ in range(longitud))

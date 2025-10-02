@@ -171,13 +171,14 @@ class Agenda(models.Model):
 
 class Paciente(models.Model):
     rut = models.CharField(max_length=20, unique=True)
-    email = models.EmailField(null=True, blank=True)
+    email = models.EmailField(unique=True, blank=True, null=True)
     nombres = models.CharField(max_length=120)
     apellidos = models.CharField(max_length=120)
-    telefono = models.CharField(max_length=30, null=True, blank=True)
-
+    telefono = models.CharField(max_length=30, null=True, blank=True, unique=True)
+    fecha_nacimiento = models.DateField(null=True, blank=True)
+    direccion = models.CharField(max_length=255, blank=True, null=True)
     # Contraseña hasheada
-    password = models.CharField(max_length=255)
+    password = models.CharField(max_length=255, blank=True, null=True)
 
     debe_cambiar_password = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)

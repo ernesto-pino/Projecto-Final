@@ -5,7 +5,9 @@
   <h1>Ingreso Pacientes</h1>
 
   {% if messages %}
-    {% for m in messages %}<p >{{ m }}</p>{% endfor %}
+    {% for m in messages %}
+      <div class="alert">{{ m }}</div>
+    {% endfor %}
   {% endif %}
 
   <form method="post">{% csrf_token %}

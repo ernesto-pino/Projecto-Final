@@ -41,7 +41,10 @@ urlpatterns = [
         ),name="password_reset_complete",),
 
     #paneles por rol
+    #recepcion
     path("panel/recepcion/", views.recepcion_home, name="recepcion_home"),
+    path("panel/recepcion/registrar/", views.registrar_paciente, name="registrar_paciente"),
+    #profesional
     path("panel/profesional/", views.profesional_home, name="profesional_home"),
 
     #portal pacientes    

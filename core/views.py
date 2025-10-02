@@ -1,13 +1,14 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .utils import user_has_role, crear_token_reset, obtener_token_valido
+from .utils import user_has_role, crear_token_reset, obtener_token_valido, generar_password
 from .decorators import role_required, paciente_login_required
 from .models import *
 from django.contrib import messages
-from .forms import LoginPacienteForm, CambioPasswordPacienteForm, SolicitarResetForm, ResetPasswordForm
+from .forms import LoginPacienteForm, CambioPasswordPacienteForm, SolicitarResetForm, ResetPasswordForm, PacienteCreateForm
 from django.urls import reverse
 from django.core.cache import cache
 from django.core.mail import send_mail
+from django.utils.http import url_has_allowed_host_and_scheme
 
 #renderizado de paginas
 def home(request):
@@ -84,36 +85,37 @@ def custom_404(request, exception=None):
     return render(request, "core/html/404.html", status=404)
 
 def login_paciente(request):
-    # Si ya está logeado como paciente, lo mandamos directo
     if request.session.get("paciente_id"):
         return redirect("home")
 
     form = LoginPacienteForm(request.POST or None)
     next_url = request.GET.get("next") or reverse("home")
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = reverse("home")
 
-    if request.method == "POST" and form.is_valid():
-        rut = form.cleaned_data["rut"].strip()
-        password = form.cleaned_data["password"]
+    error_msg = "RUT o contraseña inválidos."
 
-        try:
-            p = Paciente.objects.get(rut=rut, is_active=True)
-        except Paciente.DoesNotExist:
-            messages.error(request, "RUT o contraseña inválidos.")
-        else:
-            if p.check_password(password):
-                # Seguridad: evitar fijación de sesión
+    if request.method == "POST":
+        if form.is_valid():
+            rut = (form.cleaned_data.get("rut") or "").strip()
+            password = form.cleaned_data.get("password") or ""
+
+            # Unificamos todos los fallos bajo el mismo mensaje:
+            p = Paciente.objects.filter(rut=rut, is_active=True).first()
+            if not p or not p.password or not p.check_password(password):
+                messages.error(request, error_msg)
+            else:
                 request.session.cycle_key()
                 request.session["paciente_id"] = p.id
-                # Expiración opcional (ej. 4 horas)
-                # request.session.set_expiry(4 * 60 * 60)
-
                 p.last_login = timezone.now()
                 p.save(update_fields=["last_login"])
                 return redirect(next_url)
-            else:
-                messages.error(request, "RUT o contraseña inválidos.")
+        else:
+            # Si el form no valida (ej: RUT mal formateado), también mostramos el genérico
+            messages.error(request, error_msg)
 
     return render(request, "paciente/login.html", {"form": form})
+
 
 def logout_paciente(request):
     request.session.pop("paciente_id", None)
@@ -231,3 +233,48 @@ def restablecer_password(request, token):
         return redirect("login_paciente")
 
     return render(request, "paciente/restablecer_password.html", {"form": form})
+
+
+def registrar_paciente(request):
+    if request.method == "POST":
+        form = PacienteCreateForm(request.POST)
+        if form.is_valid():
+            paciente = form.save(commit=False)
+
+            # Generar contraseña aleatoria
+            password_generada = generar_password()
+            paciente.set_password(password_generada)  # se guarda hasheada
+            paciente.debe_cambiar_password = True
+            paciente.save()
+
+            # Enviar correo con la contraseña
+            if paciente.email:
+                send_mail(
+                    subject="Bienvenido a MiHora Lampa",
+                    message=(
+                        f"Estimado/a {paciente.nombres},\n\n"
+                        f"Su cuenta ha sido creada.\n"
+                        f"RUT: {paciente.rut}\n"
+                        f"Contraseña temporal: {password_generada}\n\n"
+                        f"Por favor, cambie su contraseña al ingresar al sistema."
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[paciente.email],
+                    fail_silently=False,
+                )
+                msg = "Paciente creado y contraseña enviada al correo."
+            else:
+                # SIN correo -> SIN contraseña (queda None/“”), no puede iniciar sesión
+                paciente.password = None
+                paciente.debe_cambiar_password = False  # opcional
+                paciente.save()
+                msg = "Paciente creado sin acceso web (no tiene correo)."
+
+            messages.success(request, msg)
+            return redirect("registrar_paciente")  # o al listado
+        else:
+            messages.error(request, "")
+    else:
+        form = PacienteCreateForm()
+
+    return render(request, "admin/recepcion/registrar.html", {"form": form})
