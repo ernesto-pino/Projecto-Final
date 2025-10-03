@@ -21,7 +21,7 @@
     {% endfor %}
   {% endif %}
 
-  <form method="post" novalidate>
+  <form method="post" id="paciente-form" novalidate>
     {% csrf_token %}
     {{ form.non_field_errors }}
 
@@ -63,5 +63,40 @@
 
     <button type="submit">Guardar</button>
   </form>
+  <script>
+    (function () {
+      const form = document.getElementById('paciente-form');
+      if (!form) return;
+
+      form.addEventListener('submit', function (e) {
+        // 1) Validación HTML5 (required, pattern, type="email", etc.)
+        if (!form.checkValidity()) {
+          e.preventDefault();
+          form.reportValidity(); // muestra mensajes del navegador
+          return;
+        }
+
+        // 2) Mensaje según si hay email
+        const emailInput = form.querySelector('input[name="email"]');
+        const hasEmail = emailInput && emailInput.value.trim() !== '';
+
+        const msg = hasEmail
+          ? 'Se creará el paciente y se enviará una contraseña temporal al correo. ¿Confirmar?'
+          : 'Se creará el paciente SIN acceso a la web (no tiene correo). ¿Confirmar?';
+
+        if (!confirm(msg)) {
+          e.preventDefault();
+          return;
+        }
+
+        // 3) Evitar doble envío si confirma
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Guardando...';
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

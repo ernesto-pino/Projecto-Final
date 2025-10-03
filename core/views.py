@@ -234,7 +234,7 @@ def restablecer_password(request, token):
 
     return render(request, "paciente/restablecer_password.html", {"form": form})
 
-
+@role_required("Recepción")
 def registrar_paciente(request):
     if request.method == "POST":
         form = PacienteCreateForm(request.POST)
