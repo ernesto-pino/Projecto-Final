@@ -1,8 +1,46 @@
 {% extends "core/html/base.html" %}
-
+{% load static %}
 {% block title %}Inicio – MiHora Lampa{% endblock %}
 
 {% block content %}
+
+<!-- Carrusel de fotos del COSAM -->
+<section class="bg-light">
+  <div id="cosamCarousel" class="carousel slide" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+      <button type="button" data-bs-target="#cosamCarousel" data-bs-slide-to="0" class="active" aria-current="true"
+        aria-label="Slide 1"></button>
+      <button type="button" data-bs-target="#cosamCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+      <button type="button" data-bs-target="#cosamCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+    </div>
+    <div class="carousel-inner">
+      <div class="carousel-item active">
+        <img src="{% static 'core/img/cosam_1.jpeg' %}" class="d-block w-100" alt="Fachada COSAM Lampa">
+        <div class="carousel-caption d-none d-md-block">
+        </div>
+      </div>
+      <div class="carousel-item">
+        <img src="{% static 'core/img/cosam_2.jpg' %}" class="d-block w-100" alt="Sala de espera">
+        <div class="carousel-caption d-none d-md-block">
+        </div>
+      </div>
+      <div class="carousel-item">
+        <img src="{% static 'core/img/cosam_3.jpg' %}" class="d-block w-100" alt="Box de atención">
+        <div class="carousel-caption d-none d-md-block">
+
+        </div>
+      </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#cosamCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Anterior</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#cosamCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Siguiente</span>
+    </button>
+  </div>
+</section>
 
 <div class="container py-5 text-center">
   <h2 class="section-title">
