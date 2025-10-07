@@ -21,7 +21,7 @@
     {% endfor %}
   {% endif %}
 
-  <form method="post" id="paciente-form" novalidate>
+  <form method="post" id="paciente-form">
     {% csrf_token %}
     {{ form.non_field_errors }}
 
@@ -63,6 +63,7 @@
 
     <button type="submit">Guardar</button>
   </form>
+  
   <script>
     (function () {
       const form = document.getElementById('paciente-form');

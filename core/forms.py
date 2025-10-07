@@ -3,6 +3,7 @@ from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.core.exceptions import ValidationError
 import re
 from .models import Paciente
+from datetime import date
 
 class CustomPasswordResetForm(PasswordResetForm):
     # Personaliza el campo para mensajes y estilos
@@ -153,95 +154,164 @@ def valida_rut_chileno(rut: str) -> bool:
     if not re.match(r"^\d{1,8}-[\dkK]$", rut):
         return False
     numero, dv = rut.split("-")
-    suma, mult = 0, 2
+    s, m = 0, 2
     for d in reversed(numero):
-        suma += int(d) * mult
-        mult = 2 if mult == 7 else mult + 1
-    resto = 11 - (suma % 11)
-    dv_calc = "0" if resto == 11 else "K" if resto == 10 else str(resto)
+        s += int(d) * m
+        m = 2 if m == 7 else m + 1
+    r = 11 - (s % 11)
+    dv_calc = "0" if r == 11 else "K" if r == 10 else str(r)
     return dv_calc == dv.upper()
 
 def normaliza_telefono_cl(telefono: str) -> str:
+    """Devuelve +56XXXXXXXXX (9 dígitos nacionales)"""
     t = (telefono or "").strip()
-    t = re.sub(r"[^\d+]", "", t)  # deja sólo dígitos y +
-    if t.startswith("+56"):
-        return t
-    if t.startswith("56"):
-        return "+" + t
-    solo = re.sub(r"\D", "", t)
-    if solo:  # asume Chile
-        return "+56" + solo
-    return t
+    # deja solo dígitos y '+'
+    t = re.sub(r"[^\d+]", "", t)
+    # quita +, para contar
+    digits = re.sub(r"\D", "", t)
+    # si empieza con 56 ya viene con país
+    if digits.startswith("56"):
+        digits = digits[2:]
+    # ahora digits debería tener 9 dígitos (móvil o fijo nacional)
+    if len(digits) != 9:
+        return ""  # señal de inválido
+    return "+56" + digits
+
+def _fecha_min_200_anios():
+    hoy = date.today()
+    try:
+        return hoy.replace(year=hoy.year - 200)
+    except ValueError:
+        # si es 29/FEB ajusta a 28/FEB
+        return hoy.replace(year=hoy.year - 200, day=28)
+
+# Regex solo letras (incluye tildes y ñ) y espacios, 2-50 chars
+RE_SOLO_LETRAS_ESPACIOS = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{2,50}$")
 
 class PacienteCreateForm(forms.ModelForm):
     class Meta:
         model = Paciente
-        fields = [
-            "rut", "nombres", "apellidos", "fecha_nacimiento",
-            "telefono", "email", "direccion",
-        ]
-        widgets = {
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
-        }
+        fields = ["rut", "nombres", "apellidos", "fecha_nacimiento", "telefono", "email", "direccion"]
+        widgets = {"fecha_nacimiento": forms.DateInput(attrs={"type": "date"})}
         error_messages = {
             "rut": {"unique": "Ya existe un paciente con este RUT."},
             "email": {"unique": "Este correo ya está registrado."},
             "telefono": {"unique": "Este teléfono ya está registrado."},
-            "nombres": {"required": "El nombre es obligatorio."},
-            "apellidos": {"required": "El apellido es obligatorio."},
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Requeridos según tu modelo/negocio:
-        self.fields["rut"].required = True
-        self.fields["nombres"].required = True
-        self.fields["apellidos"].required = True
-        self.fields["telefono"].required = False   # aunque en el modelo es blank=True, tú lo quieres obligatorio
-        self.fields["email"].required = False      # idem
+        # Requeridos (email opcional)
+        for f in ["rut", "nombres", "apellidos"]:
+            self.fields[f].required = True
+        self.fields["telefono"].required = False
+        self.fields["email"].required = False
 
-        # Placeholders y patterns (esto reemplaza lo que intentabas poner en el template)
+        # Placeholders + validaciones HTML
         self.fields["rut"].widget.attrs.update({
             "placeholder": "12.345.678-5",
             "pattern": r"^\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]$|^\d{7,8}-[\dkK]$",
             "title": "Ej: 12.345.678-5 o 12345678-5",
         })
-        self.fields["telefono"].widget.attrs.update({
-            "placeholder": "+56912345678",
-            "title": "Ej: +56912345678 o 912345678",
+
+        # Nombres y apellidos: solo letras (incluye tildes/ñ) y espacios, 2-50
+        for fname in ("nombres", "apellidos"):
+            self.fields[fname].widget.attrs.update({
+                "placeholder": "Ej: Juan Andrés",
+                "pattern": r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{2,50}",
+                "minlength": "2",
+                "maxlength": "50",
+                "title": "Solo letras y espacios, entre 2 y 50 caracteres.",
+            })
+
+        # Fecha: <= hoy y >= hoy-200 años
+        hoy = date.today()
+        min_f = _fecha_min_200_anios()
+        self.fields["fecha_nacimiento"].widget.attrs.update({
+            "max": hoy.isoformat(),
+            "min": min_f.isoformat(),
+            "title": f"Entre {min_f.isoformat()} y {hoy.isoformat()}",
         })
+
+        # Teléfono: +56XXXXXXXXX o 9 dígitos nacionales
+        self.fields["telefono"].widget.attrs.update({
+            "placeholder": "+56912345678 o 912345678",
+            "pattern": r"^(\+?56)?\d{9}$",
+            "title": "Formato válido: +56912345678 o 912345678",
+            "inputmode": "tel",
+        })
+
+        # Dirección: máximo 100 (aunque el modelo acepte 255)
+        self.fields["direccion"].widget.attrs.update({
+            "maxlength": "100",
+            "title": "Máximo 100 caracteres.",
+            "placeholder": "Calle 123, Depto 45",
+        })
+
+        # Email opcional (EmailField ya valida formato si se ingresa)
         self.fields["email"].widget.attrs.update({
             "placeholder": "correo@dominio.cl",
         })
 
-    # --- Validaciones ---
-
+    # ---- Validaciones servidor ----
     def clean_rut(self):
         rut = normaliza_rut(self.cleaned_data.get("rut"))
         if not valida_rut_chileno(rut):
-            raise ValidationError("RUT inválido. Revisa formato y dígito verificador.")
+            raise ValidationError("RUT inválido.")
         if Paciente.objects.filter(rut=rut).exists():
             raise ValidationError("Ya existe un paciente con este RUT.")
         return rut
 
+    def _valida_nombre_like(self, valor: str, campo: str) -> str:
+        val = (valor or "").strip()
+        # colapsar espacios múltiples
+        val = re.sub(r"\s+", " ", val)
+        if not RE_SOLO_LETRAS_ESPACIOS.fullmatch(val):
+            raise ValidationError(f"{campo} inválido: solo letras y espacios (2 a 50 caracteres).")
+        return val
+
+    def clean_nombres(self):
+        return self._valida_nombre_like(self.cleaned_data.get("nombres"), "Nombres")
+
+    def clean_apellidos(self):
+        return self._valida_nombre_like(self.cleaned_data.get("apellidos"), "Apellidos")
+
+    def clean_fecha_nacimiento(self):
+        fnac = self.cleaned_data.get("fecha_nacimiento")
+        if not fnac:
+            return fnac  # opcional
+        hoy = date.today()
+        min_f = _fecha_min_200_anios()
+        if fnac > hoy or fnac < min_f:
+            raise ValidationError(f"Fecha fuera de rango: entre {min_f.isoformat()} y {hoy.isoformat()}.")
+        return fnac
+
+    def clean_telefono(self):
+        tel_raw = self.cleaned_data.get("telefono")
+        # Opcional: si viene vacío, lo guardamos como None (NULL en BD)
+        if not tel_raw or not tel_raw.strip():
+            return None
+
+        tel_norm = normaliza_telefono_cl(tel_raw)
+        if not tel_norm:
+            raise ValidationError("Formato de teléfono inválido. Use +56912345678 o 912345678.")
+        if not re.fullmatch(r"^\+56\d{9}$", tel_norm):
+            raise ValidationError("Formato de teléfono inválido.")
+        if Paciente.objects.filter(telefono=tel_norm).exists():
+            raise ValidationError("Este teléfono ya está registrado.")
+        return tel_norm
+
     def clean_email(self):
         email = (self.cleaned_data.get("email") or "").strip().lower()
         if not email:
-            return None
+            return ""
         if Paciente.objects.filter(email=email).exists():
             raise ValidationError("Este correo ya está registrado.")
         return email
 
-    def clean_telefono(self):
-        tel_raw = self.cleaned_data.get("telefono")
-        if not tel_raw:
-            return None
-        tel = normaliza_telefono_cl(tel_raw)
-        digits = re.sub(r"\D", "", tel)
-        # Validamos que sea Chile (+56…) y largo razonable (móvil = 56 + 9 + 8 dígitos = 12; fijos ~11-12)
-        if not digits.startswith("56") or len(digits) < 11 or len(digits) > 12:
-            raise ValidationError("Formato de teléfono inválido. Ej: +56912345678")
-        if Paciente.objects.filter(telefono=tel).exists():
-            raise ValidationError("Este teléfono ya está registrado.")
-        return tel
+    def clean_direccion(self):
+        d = (self.cleaned_data.get("direccion") or "").strip()
+        if len(d) > 100:
+            raise ValidationError("La dirección no puede superar 100 caracteres.")
+        return d
