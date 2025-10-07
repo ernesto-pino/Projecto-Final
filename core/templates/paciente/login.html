@@ -1,21 +1,21 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ingreso Pacientes</title>
 
-  <!-- Tu stylesheet (corrige la ruta si corresponde) -->
   <link rel="stylesheet" href="{% static 'core/css/paciente.css' %}">
   <link rel="icon" type="image/png" href="{% static 'core/img/logo_lampa.png' %}">
 </head>
-<!-- clave: clase login-page para activar el layout del CSS -->
+
 <body class="login-page">
 
   <div class="login-wrap">
 
-    <!-- Logo flotante centrado -->
+    <!-- Logo -->
     <div class="login-logo">
       <img src="{% static 'core/img/logo_lampa.png' %}" alt="MiHora Lampa">
     </div>
@@ -25,20 +25,20 @@
       <h1 class="login-title">Ingreso Pacientes</h1>
       <p class="login-subtitle">Accede para revisar tu información y solicitudes</p>
 
-      <!-- Mensajes de Django -->
+      <!-- Mensajes -->
       {% if messages %}
-        {% for m in messages %}
-          <div class="login-alert">{{ m }}</div>
-        {% endfor %}
+      {% for m in messages %}
+      <div class="login-alert">{{ m }}</div>
+      {% endfor %}
       {% endif %}
 
-      <!-- Errores generales del form -->
+      <!-- Errores generales -->
       {% if form.non_field_errors %}
-        <ul class="errorlist">
-          {% for e in form.non_field_errors %}
-            <li>{{ e }}</li>
-          {% endfor %}
-        </ul>
+      <ul class="errorlist">
+        {% for e in form.non_field_errors %}
+        <li>{{ e }}</li>
+        {% endfor %}
+      </ul>
       {% endif %}
 
       <form method="post" novalidate>
@@ -49,24 +49,24 @@
           <label class="login-label" for="{{ form.rut.id_for_label }}">{{ form.rut.label }}</label>
           {{ form.rut }}
           {% if form.rut.errors %}
-            <ul class="errorlist">
-              {% for e in form.rut.errors %}
-                <li>{{ e }}</li>
-              {% endfor %}
-            </ul>
+          <ul class="errorlist">
+            {% for e in form.rut.errors %}
+            <li>{{ e }}</li>
+            {% endfor %}
+          </ul>
           {% endif %}
         </div>
 
-        <!-- Campo Password -->
+        <!-- Campo Contraseña -->
         <div class="login-field">
           <label class="login-label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
           {{ form.password }}
           {% if form.password.errors %}
-            <ul class="errorlist">
-              {% for e in form.password.errors %}
-                <li>{{ e }}</li>
-              {% endfor %}
-            </ul>
+          <ul class="errorlist">
+            {% for e in form.password.errors %}
+            <li>{{ e }}</li>
+            {% endfor %}
+          </ul>
           {% endif %}
         </div>
 
@@ -76,8 +76,14 @@
           <a href="{% url 'solicitar_reset' %}">¿Olvidaste tu contraseña?</a>
         </p>
       </form>
+
+      <!-- Botón Volver al inicio -->
+      <div class="volver-inicio">
+        <a href="{% url 'home' %}" class="volver-btn">Volver al inicio</a>
+      </div>
     </div>
   </div>
 
 </body>
+
 </html>

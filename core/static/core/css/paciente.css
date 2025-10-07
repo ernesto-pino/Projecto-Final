@@ -186,6 +186,8 @@ ul.errorlist li {
     text-decoration: underline;
 }
 
+
+
 /* --- Responsive --- */
 @media (max-width:520px) {
     .login-card {
@@ -198,3 +200,29 @@ ul.errorlist li {
     }
 }
 
+
+/* ------- Botón volver al inicio ------- */
+.volver-inicio {
+    margin-top: 16px;
+    text-align: center;
+}
+
+.volver-btn {
+    display: inline-block;
+    background: #4D6EB4;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.02s;
+}
+
+.volver-btn:hover {
+    background: #547aca;
+}
+
+.volver-btn:active {
+    transform: translateY(1px);
+}
