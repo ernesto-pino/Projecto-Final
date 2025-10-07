@@ -278,3 +278,6 @@ def registrar_paciente(request):
         form = PacienteCreateForm()
 
     return render(request, "admin/recepcion/registrar.html", {"form": form})
+
+def probar_404(request):
+    return render(request, "core/html/404.html", status=404)

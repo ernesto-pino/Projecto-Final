@@ -1,15 +1,59 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
-<head><meta charset="utf-8"><title>Recuperar contraseña</title></head>
-<body>
-  <h1>Recuperar contraseña</h1>
-  {% if messages %}{% for m in messages %}<p>{{ m }}</p>{% endfor %}{% endif %}
 
-  <form method="post">{% csrf_token %}
-    <div>{{ form.rut.label_tag }} {{ form.rut }} {{ form.rut.errors }}</div>
-    <button type="submit">Enviar enlace</button>
-  </form>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperar Contraseña</title>
+  <link rel="stylesheet" href="{% static 'core/css/paciente.css' %}">
+  <link rel="icon" type="image/png" href="{% static 'core/img/logo_lampa.png' %}">
+</head>
 
-  <p><a href="{% url 'login_paciente' %}">Volver al ingreso</a></p>
+<body class="login-page">
+  <div class="login-wrap">
+
+    <!-- Logo -->
+    <div class="login-logo">
+      <img src="{% static 'core/img/logo_lampa.png' %}" alt="MiHora Lampa">
+    </div>
+
+    <!-- Card -->
+    <div class="login-card">
+      <h1 class="login-title">Recuperar Contraseña</h1>
+      <p class="login-subtitle">Ingresa tu RUT para recibir el enlace de recuperación</p>
+
+      <!-- Mensajes de Django -->
+      {% if messages %}
+      {% for m in messages %}
+      <div class="login-alert">{{ m }}</div>
+      {% endfor %}
+      {% endif %}
+
+      <!-- Formulario -->
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="login-field">
+          <label class="login-label" for="{{ form.rut.id_for_label }}">{{ form.rut.label }}</label>
+          {{ form.rut }}
+          {% if form.rut.errors %}
+          <ul class="errorlist">
+            {% for e in form.rut.errors %}
+            <li>{{ e }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="login-btn">Enviar enlace</button>
+      </form>
+
+      <p class="login-links">
+        <a href="{% url 'login_paciente' %}">Volver al ingreso</a>
+      </p>
+    </div>
+  </div>
 </body>
+
 </html>

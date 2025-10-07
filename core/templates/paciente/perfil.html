@@ -1,22 +1,152 @@
-<!DOCTYPE html>
-<html lang="es">
-<head><meta charset="utf-8"><title>Perfil Paciente</title></head>
-<body>
-  <h1>Perfil del Paciente</h1>
+{% extends "core/html/base.html" %}
+{% load static %}
 
-  <ul>
-    <li><strong>RUT:</strong> {{ paciente.rut }}</li>
-    <li><strong>Nombres:</strong> {{ paciente.nombres }}</li>
-    <li><strong>Apellidos:</strong> {{ paciente.apellidos }}</li>
-    <li><strong>Email:</strong> {{ paciente.email }}</li>
-    <li><strong>Teléfono:</strong> {{ paciente.telefono }}</li>
-    <li><strong>Activo:</strong> {{ paciente.is_active }}</li>
-    <li><strong>Debe cambiar contraseña:</strong> {{ paciente.debe_cambiar_password }}</li>
-    <li><strong>Último login:</strong> {{ paciente.last_login }}</li>
-    <li><strong>Fecha registro:</strong> {{ paciente.date_joined }}</li>
-  </ul>
+{% block title %}Perfil – MiHora Lampa{% endblock %}
 
-  <p><a href="{% url 'home' %}">Inicio</a> | 
-     <a href="{% url 'logout_paciente' %}">Cerrar sesión</a></p>
-</body>
-</html>
+{% block extra_css %}
+<style>
+  /* ============================
+   PERFIL PACIENTE – Tabla limpia MiHora Lampa
+   ============================ */
+  .perfil-container {
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 20px;
+    text-align: center;
+    color: #1a1a1a;
+  }
+
+  .perfil-header {
+    margin-bottom: 24px;
+  }
+
+  .perfil-logo {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 12px;
+  }
+
+  .perfil-header h1 {
+    color: #4D6EB4;
+    margin-bottom: 6px;
+  }
+
+  .perfil-subtitle {
+    color: #5a6472;
+    font-size: .95rem;
+  }
+
+  /* --- Card principal --- */
+  .perfil-card {
+    background: #fff;
+    border: 1px solid #e0e6f0;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .05);
+    padding: 28px 32px;
+    text-align: left;
+    margin-bottom: 28px;
+  }
+
+  /* --- Tabla flexible --- */
+  .perfil-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px 32px;
+  }
+
+  .perfil-grid div {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    align-items: start;
+    column-gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f3f8;
+    font-size: .98rem;
+  }
+
+  .perfil-grid div span {
+    font-weight: 600;
+    color: #4D6EB4;
+  }
+
+  /* Evita cortes en valores largos */
+  .perfil-grid div * {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
+  }
+
+  /* --- Botones --- */
+  .perfil-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .perfil-btn {
+    text-decoration: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: .95rem;
+    transition: background .2s, transform .02s;
+  }
+
+  .perfil-btn.secondary {
+    background: #4D6EB4;
+    color: #fff;
+  }
+
+  .perfil-btn.secondary:hover {
+    background: #547aca;
+  }
+
+  .perfil-btn.danger {
+    background: #e74c3c;
+    color: #fff;
+  }
+
+  .perfil-btn.danger:hover {
+    background: #c0392b;
+  }
+
+  @media (max-width:600px) {
+    .perfil-grid div {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="perfil-container">
+
+  <div class="perfil-header">
+    <img src="{% static 'core/img/logo_lampa.png' %}" alt="MiHora Lampa" class="perfil-logo">
+    <h1>Perfil del Paciente</h1>
+    <p class="perfil-subtitle">Información registrada en el sistema</p>
+  </div>
+
+  <div class="perfil-card">
+    <div class="perfil-grid">
+      <div><span>RUT:</span> {{ paciente.rut }}</div>
+      <div><span>Nombres:</span> {{ paciente.nombres }}</div>
+      <div><span>Apellidos:</span> {{ paciente.apellidos }}</div>
+      <div><span>Email:</span> {{ paciente.email|default:"—" }}</div>
+      <div><span>Teléfono:</span> {{ paciente.telefono|default:"—" }}</div>
+      <div><span>Activo:</span> {{ paciente.is_active|yesno:"Sí,No" }}</div>
+      <div><span>Cambiar contraseña:</span> {{ paciente.debe_cambiar_password|yesno:"Sí,No" }}</div>
+      <div><span>Último ingreso:</span> {{ paciente.last_login|date:"d/m/Y H:i" }}</div>
+      <div><span>Fecha de registro:</span> {{ paciente.date_joined|date:"d/m/Y H:i" }}</div>
+    </div>
+  </div>
+
+  <div class="perfil-actions">
+    <a href="{% url 'home' %}" class="perfil-btn secondary">Volver al inicio</a>
+    <a href="{% url 'logout_paciente' %}" class="perfil-btn danger">Cerrar sesión</a>
+  </div>
+
+</div>
+{% endblock %}

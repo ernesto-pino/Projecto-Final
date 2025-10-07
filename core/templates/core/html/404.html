@@ -1,16 +1,75 @@
 {% extends "core/html/base.html" %}
+{% load static %}
 
 {% block title %}Página no encontrada – MiHora Lampa{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* ===== Estilos 404 – MiHora Lampa ===== */
+  .error-404 {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    color: #1a1a1a;
+  }
+
+  .error-404 h1 {
+    font-size: 6rem;
+    font-weight: 800;
+    color: #4D6EB4;
+    margin-bottom: 0.5rem;
+  }
+
+  .error-404 h2 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #333;
+  }
+
+  .error-404 p {
+    color: #555;
+    font-size: 1.05rem;
+    margin-bottom: 1.8rem;
+  }
+
+  .error-404 img {
+    width: 230px;
+    max-width: 80%;
+    margin-bottom: 2rem;
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.15));
+  }
+
+  /* --- Botón normal MiHora --- */
+  .btn-cosam {
+    background-color: #4D6EB4;
+    /* Azul institucional */
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 6px;
+    text-decoration: none;
+  }
+
+  .btn-cosam:hover {
+    background-color: #547aca;
+    color: #fff;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container text-center py-5">
-  <h1 class="display-4 fw-bold mb-3">404</h1>
-  <h2 class="h4 mb-4">Página no encontrada</h2>
-  <p class="lead mb-4">
-    Lo sentimos, la página que buscas no existe o fue movida.
+<div class="error-404 container py-5">
+  <img src="{% static 'core/img/404_funny.png' %}" alt="Página no encontrada">
+  <h1>404</h1>
+  <h2>¡Ups! Te perdiste en el camino</h2>
+  <p>
+    Lo sentimos, la página que buscas no existe o fue movida.<br>
+    Puedes regresar al inicio para continuar.
   </p>
-  <a href="{% url 'home' %}" class="btn btn-primary">
-    Volver al inicio
-  </a>
+  <a href="{% url 'home' %}" class="btn-cosam">Volver al inicio</a>
 </div>
 {% endblock %}
