@@ -37,6 +37,6 @@ def obtener_token_valido(token_plano: str):
         return None
     return obj if obj.is_valid() else None
 
-def generar_password(longitud=10):
+def generar_password(longitud=12):
     alfabeto = string.ascii_letters + string.digits + "!@#$%&*"
     return "".join(secrets.choice(alfabeto) for _ in range(longitud))

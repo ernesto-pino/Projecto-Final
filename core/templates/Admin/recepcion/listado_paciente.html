@@ -1,0 +1,101 @@
+{# templates/pacientes/lista.html #}
+<div class="container py-4">
+  <h1 class="h3 mb-3">Pacientes</h1>
+
+  <form class="row g-2 mb-3" method="get">
+    <div class="col-sm-5 col-md-4">
+      <input type="text" class="form-control" name="q" value="{{ q }}"
+             placeholder="Buscar por RUT (con o sin puntos/guion)">
+    </div>
+    <div class="col-sm-4 col-md-3">
+      <select name="estado" class="form-select">
+        <option value="todos" {% if estado == "todos" %}selected{% endif %}>Todos</option>
+        <option value="activos" {% if estado == "activos" %}selected{% endif %}>Activos</option>
+        <option value="inactivos" {% if estado == "inactivos" %}selected{% endif %}>Inactivos</option>
+      </select>
+    </div>
+    <div class="col-sm-3 col-md-2">
+      <button class="btn btn-primary w-100" type="submit">Filtrar</button>
+    </div>
+  </form>
+
+  <div class="table-responsive">
+    <table class="table align-middle table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>RUT</th>
+          <th>Nombre</th>
+          <th class="text-center">Activo</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in page_obj.object_list %}
+          <tr>
+            <td class="text-nowrap">{{ p.rut }}</td>
+            <td>
+              <a href="{% url 'paciente_detail' p.pk %}" class="text-decoration-none">
+                {{ p.nombres }} {{ p.apellidos }}
+              </a>
+            </td>
+            <td class="text-center">
+              {% if p.is_active %}
+                <span class="badge bg-success">Sí</span>
+              {% else %}
+                <span class="badge bg-secondary">No</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-primary" href="{% url 'paciente_detail' p.pk %}">
+                Ver perfil
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-center py-4">No hay pacientes para mostrar.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav aria-label="Paginación">
+    <ul class="pagination justify-content-center">
+      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+        <a class="page-link"
+           href="?page=1{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">«</a>
+      </li>
+      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+        <a class="page-link"
+           href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">
+          Anterior
+        </a>
+      </li>
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if num == page_obj.number %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">
+              {{ num }}
+            </a>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+        <a class="page-link"
+           href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">
+          Siguiente
+        </a>
+      </li>
+      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+        <a class="page-link"
+           href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">»</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+</div>

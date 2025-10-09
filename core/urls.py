@@ -44,6 +44,10 @@ urlpatterns = [
     #recepcion
     path("panel/recepcion/", views.recepcion_home, name="recepcion_home"),
     path("panel/recepcion/registrar/", views.registrar_paciente, name="registrar_paciente"),
+    path("panel/recepcion/pacientes", views.paciente_list, name="paciente_list"),
+    path("panel/recepcion/pacientes/<int:pk>/", views.paciente_detail, name="paciente_detail"),
+    path("panel/recepcion/pacientes/<int:pk>/editar/", views.paciente_edit, name="paciente_edit"),
+
     #profesional
     path("panel/profesional/", views.profesional_home, name="profesional_home"),
 

@@ -315,3 +315,91 @@ class PacienteCreateForm(forms.ModelForm):
         if len(d) > 100:
             raise ValidationError("La dirección no puede superar 100 caracteres.")
         return d
+    
+NOMBRE_RE = re.compile(r"^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s'-]{2,50}$")
+
+def _dos_siglos_atras(hoy: date) -> date:
+    try:
+        return hoy.replace(year=hoy.year - 200)
+    except ValueError:
+        return hoy.replace(month=2, day=28, year=hoy.year - 200)
+
+class PacienteEditForm(forms.ModelForm):
+    rut = forms.CharField(disabled=True, required=False, label="RUT")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_email = ((self.instance.email or "").strip().lower())
+        self.fields["email"].widget.attrs["data-original-email"] = (self.instance.email or "")
+
+    class Meta:
+        model = Paciente
+        fields = ["rut", "nombres", "apellidos", "email", "telefono",
+                  "fecha_nacimiento", "direccion", "is_active"]
+        widgets = {
+            "nombres": forms.TextInput(attrs={"class": "form-control"}),
+            "apellidos": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+            "telefono": forms.TextInput(attrs={"class": "form-control", "placeholder": "+56 9 1234 5678"}),
+            "fecha_nacimiento": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "direccion": forms.TextInput(attrs={"class": "form-control"}),
+            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+
+    def clean_nombres(self):
+        v = (self.cleaned_data.get("nombres") or "").strip()
+        if not NOMBRE_RE.match(v):
+            raise ValidationError("Solo letras (incluye tildes/ñ), mínimo 2 y máximo 50 caracteres.")
+        return v
+
+    def clean_apellidos(self):
+        v = (self.cleaned_data.get("apellidos") or "").strip()
+        if not NOMBRE_RE.match(v):
+            raise ValidationError("Solo letras (incluye tildes/ñ), mínimo 2 y máximo 50 caracteres.")
+        return v
+
+    def clean_fecha_nacimiento(self):
+        f = self.cleaned_data.get("fecha_nacimiento")
+        if not f:
+            return None
+        hoy = date.today()
+        if f > hoy:
+            raise ValidationError("La fecha de nacimiento no puede ser futura.")
+        if f < _dos_siglos_atras(hoy):
+            raise ValidationError("La fecha de nacimiento no puede ser anterior a 200 años.")
+        return f
+
+    def _normaliza_tel(self, tel_raw: str) -> str:
+        digits = re.sub(r"\D", "", tel_raw or "")
+        if digits.startswith("56"):
+            digits = digits[2:]
+        return digits
+
+    def clean_telefono(self):
+        tel = self.cleaned_data.get("telefono")
+        if not tel:
+            return None
+        digits = self._normaliza_tel(tel)
+        if len(digits) != 9:
+            raise ValidationError("Teléfono inválido. Usa formato chileno de 9 dígitos (ej: 9XXXXXXXX).")
+        qs = Paciente.objects.filter(telefono__iexact=digits)
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise ValidationError("Este teléfono ya está registrado en otro paciente.")
+        return digits
+
+    def clean_email(self):
+        email = (self.cleaned_data.get("email") or "").strip()
+        if not email:
+            return None
+        qs = Paciente.objects.filter(email__iexact=email)
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise ValidationError("Este correo ya está registrado en otro paciente.")
+        return email
+
+    def has_email_changed(self):
+        new = ((self.cleaned_data.get("email") or "").strip().lower())
+        return self._original_email != new

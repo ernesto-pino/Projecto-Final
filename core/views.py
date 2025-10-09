@@ -1,14 +1,19 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .utils import user_has_role, crear_token_reset, obtener_token_valido, generar_password
 from .decorators import role_required, paciente_login_required
 from .models import *
 from django.contrib import messages
-from .forms import LoginPacienteForm, CambioPasswordPacienteForm, SolicitarResetForm, ResetPasswordForm, PacienteCreateForm
+from .forms import LoginPacienteForm, CambioPasswordPacienteForm, SolicitarResetForm, ResetPasswordForm, PacienteCreateForm, PacienteEditForm
 from django.urls import reverse
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.db.models.functions import Replace, Upper
+from django.db.models import F, Value
+from django.core.paginator import Paginator
+import re
+from django.db import transaction
 
 #renderizado de paginas
 def home(request):
@@ -281,3 +286,108 @@ def registrar_paciente(request):
 
 def probar_404(request):
     return render(request, "core/html/404.html", status=404)
+
+def paciente_list(request):
+    q = (request.GET.get("q") or "").strip()
+    estado = (request.GET.get("estado") or "todos").strip().lower()
+
+    qs = Paciente.objects.all()
+
+    # Filtro Activos / Inactivos
+    if estado == "activos":
+        qs = qs.filter(is_active=True)
+    elif estado == "inactivos":
+        qs = qs.filter(is_active=False)
+
+    # Buscador por RUT (ignora . y - / mayúsculas)
+    if q:
+        q_norm = re.sub(r"[^0-9Kk]", "", q).upper()
+        qs = qs.annotate(
+            rut_norm=Replace(
+                Replace(Upper(F("rut")), Value("."), Value("")),
+                Value("-"),
+                Value(""),
+            )
+        ).filter(rut_norm__contains=q_norm)
+
+    # Ordena por apellidos, nombres
+    qs = qs.order_by("apellidos", "nombres")
+
+    paginator = Paginator(qs, 30)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(request, "admin/recepcion/listado_paciente.html", {
+        "page_obj": page_obj,
+        "q": q,
+        "estado": estado,
+    })
+
+
+def paciente_detail(request, pk):
+    p = get_object_or_404(Paciente, pk=pk)
+    return render(request, "admin/recepcion/listado_perfil_paciente.html", {"p": p})
+
+def paciente_edit(request, pk):
+    paciente = get_object_or_404(Paciente, pk=pk)
+
+    if request.method == "POST":
+        form = PacienteEditForm(request.POST, instance=paciente)
+        if form.is_valid():
+            email_cambio = form.has_email_changed()
+            nuevo_email = form.cleaned_data.get("email")
+            nueva_clave_plana = None
+
+            try:
+                with transaction.atomic():
+                    obj = form.save(commit=False)
+
+                    if email_cambio:
+                        if nuevo_email:
+                            nueva_clave_plana = generar_password(12)
+                            obj.set_password(nueva_clave_plana)
+                            obj.debe_cambiar_password = True
+                        else:
+                            obj.password = None
+                            obj.debe_cambiar_password = True
+
+                    obj.save()
+                    if email_cambio and not nuevo_email:
+                        Paciente.objects.filter(pk=obj.pk).update(password=None)
+
+                if email_cambio and nuevo_email:
+                    try:
+                        send_mail(
+                            subject="MiHora Lampa – Acceso a tu cuenta",
+                            message=(
+                                f"Hola {obj.nombre_completo()},\n\n"
+                                "Tu correo fue actualizado en MiHora Lampa.\n"
+                                "Hemos generado una contraseña temporal para que puedas iniciar sesión:\n\n"
+                                f"Usuario (RUT): {obj.rut}\n"
+                                f"Correo: {obj.email}\n"
+                                f"Contraseña temporal: {nueva_clave_plana}\n\n"
+                                "Por seguridad, al ingresar se te pedirá cambiar la contraseña.\n\n"
+                                "Saludos,\nEquipo MiHora Lampa"
+                            ),
+                            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                            recipient_list=[obj.email],
+                            fail_silently=False,
+                        )
+                        messages.success(request, "Paciente actualizado. Se envió la nueva contraseña al correo.")
+                    except Exception as e:
+                        messages.error(request, f"Paciente actualizado, pero ocurrió un error al enviar el correo: {e}")
+                else:
+                    if email_cambio and not nuevo_email:
+                        messages.success(request, "Paciente actualizado. Se eliminó el correo y la contraseña (sin acceso web).")
+                    else:
+                        messages.success(request, "Paciente actualizado correctamente.")
+
+                return redirect("paciente_detail", pk=obj.pk)
+
+            except Exception as e:
+                messages.error(request, f"Ocurrió un error al guardar: {e}")
+        else:
+            messages.error(request, "Revisa los errores del formulario.")
+    else:
+        form = PacienteEditForm(instance=paciente)
+
+    return render(request, "admin/recepcion/listado_editar_paciente.html", {"form": form, "paciente": paciente})

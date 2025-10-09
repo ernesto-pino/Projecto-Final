@@ -1,0 +1,96 @@
+{# templates/pacientes/editar.html #}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Editar paciente</h1>
+    <div>
+      <a href="{% url 'paciente_detail' paciente.pk %}" class="btn btn-outline-secondary btn-sm">Cancelar</a>
+    </div>
+  </div>
+
+  <form id="paciente-edit-form" method="post" class="card shadow-sm">
+    {% csrf_token %}
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">RUT</label>
+          {{ form.rut }}
+          <div class="form-text">El RUT no se puede modificar.</div>
+          {% if form.rut.errors %}<div class="text-danger small">{{ form.rut.errors }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Nombres</label>
+          {{ form.nombres }}
+          {% if form.nombres.errors %}<div class="text-danger small">{{ form.nombres.errors }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Apellidos</label>
+          {{ form.apellidos }}
+          {% if form.apellidos.errors %}<div class="text-danger small">{{ form.apellidos.errors }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Email</label>
+          {{ form.email }}
+          <div class="form-text">Si cambias el correo, se podrá enviar una clave temporal.</div>
+          {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Teléfono</label>
+          {{ form.telefono }}
+          {% if form.telefono.errors %}<div class="text-danger small">{{ form.telefono.errors }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Fecha de nacimiento</label>
+          {{ form.fecha_nacimiento }}
+          {% if form.fecha_nacimiento.errors %}<div class="text-danger small">{{ form.fecha_nacimiento.errors }}</div>{% endif %}
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Dirección</label>
+          {{ form.direccion }}
+          {% if form.direccion.errors %}<div class="text-danger small">{{ form.direccion.errors }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-4">
+          <div class="form-check mt-2">
+            {{ form.is_active }}
+            <label class="form-check-label">Paciente activo</label>
+          </div>
+          {% if form.is_active.errors %}<div class="text-danger small">{{ form.is_active.errors }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="card-footer text-end">
+      <button class="btn btn-primary" type="submit">Guardar cambios</button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('paciente-edit-form');
+  const emailInput = document.querySelector('input[name="email"]');
+
+  if (!form || !emailInput) return;
+
+  const original = (emailInput.dataset.originalEmail || '').trim().toLowerCase();
+
+  form.addEventListener('submit', function (e) {
+    const current = (emailInput.value || '').trim().toLowerCase();
+
+    if (original !== current) {
+      if (current) {
+        const ok = confirm('Se enviará una contraseña temporal al nuevo correo del paciente. ¿Deseas continuar?');
+        if (!ok) { e.preventDefault(); return; }
+      } else {
+        const ok = confirm('Al borrar el correo, se eliminará la contraseña y el paciente perderá acceso web. ¿Deseas continuar?');
+        if (!ok) { e.preventDefault(); return; }
+      }
+    }
+  });
+});
+</script>
