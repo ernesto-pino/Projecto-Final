@@ -12,7 +12,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.db.models.functions import Replace, Upper
 from django.db.models import F, Value
 from django.core.paginator import Paginator
-import re
+import re, datetime
 from django.db import transaction
 
 #renderizado de paginas
@@ -21,7 +21,37 @@ def home(request):
 
 @role_required("Recepción")
 def recepcion_home(request):
-    return render(request, "admin/recepcion/home.html")
+    hoy = timezone.localdate()
+    ayer = hoy - datetime.timedelta(days=1)
+
+    # Traer últimos pacientes
+    ultimos = list(
+        Paciente.objects.order_by('-date_joined').only(
+            'rut', 'nombres', 'apellidos', 'date_joined'
+        )[:10]
+    )
+
+    # Badge según fecha de registro
+    for p in ultimos:
+        if p.date_joined.date() == hoy:
+            p.badge = "Nuevo"
+        elif p.date_joined.date() == ayer:
+            p.badge = "Ayer"
+        else:
+            p.badge = "Actualizado"
+
+    # Datos resumen
+    pacientes_nuevos_hoy = Paciente.objects.filter(date_joined__date=hoy).count()
+    stats = {
+        "citas_hoy": 0,  # reemplaza con tu modelo Cita si existe
+        "pacientes_nuevos_hoy": pacientes_nuevos_hoy,
+        "llamadas_hoy": 0
+    }
+
+    return render(request, "admin/recepcion/home.html", {
+        "ultimos_pacientes": ultimos,
+        "stats": stats
+    })
 
 @role_required("Profesional")
 def profesional_home(request):

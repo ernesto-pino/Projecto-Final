@@ -327,24 +327,41 @@ def _dos_siglos_atras(hoy: date) -> date:
 class PacienteEditForm(forms.ModelForm):
     rut = forms.CharField(disabled=True, required=False, label="RUT")
 
+    fecha_nacimiento = forms.DateField(
+        required=False,
+        widget=forms.DateInput(
+            attrs={"type": "date", "class": "form-control"},
+            format="%Y-%m-%d"   # ✅ Formato ISO requerido por <input type="date">
+        ),
+        input_formats=["%Y-%m-%d"],        # ✅ Acepta también este formato al guardar
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Guardamos el correo original
         self._original_email = ((self.instance.email or "").strip().lower())
         self.fields["email"].widget.attrs["data-original-email"] = (self.instance.email or "")
 
+        # Si hay fecha, seteamos el initial en formato correcto (ISO)
+        if self.instance and self.instance.fecha_nacimiento:
+            self.fields["fecha_nacimiento"].initial = self.instance.fecha_nacimiento.strftime("%Y-%m-%d")
+
     class Meta:
         model = Paciente
-        fields = ["rut", "nombres", "apellidos", "email", "telefono",
-                  "fecha_nacimiento", "direccion", "is_active"]
+        fields = [
+            "rut", "nombres", "apellidos", "email", "telefono",
+            "fecha_nacimiento", "direccion", "is_active"
+        ]
         widgets = {
             "nombres": forms.TextInput(attrs={"class": "form-control"}),
             "apellidos": forms.TextInput(attrs={"class": "form-control"}),
             "email": forms.EmailInput(attrs={"class": "form-control"}),
             "telefono": forms.TextInput(attrs={"class": "form-control", "placeholder": "+56 9 1234 5678"}),
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "direccion": forms.TextInput(attrs={"class": "form-control"}),
             "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
+
 
     def clean_nombres(self):
         v = (self.cleaned_data.get("nombres") or "").strip()

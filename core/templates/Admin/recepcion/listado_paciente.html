@@ -1,101 +1,235 @@
-{# templates/pacientes/lista.html #}
-<div class="container py-4">
-  <h1 class="h3 mb-3">Pacientes</h1>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Pacientes – MiHora Lampa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --cosam-primary:#1769aa; --cosam-accent:#2aa86b;
+      --ink-900:#0f172a; --ink-700:#334155; --ink-500:#64748b; --ink-300:#cbd5e1;
+      --bg-50:#f8fafc; --white:#fff;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg-50); color:var(--ink-900);
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+    a{text-decoration:none; color:inherit}
+    .container{max-width:1140px; margin:0 auto; padding:24px}
 
-  <form class="row g-2 mb-3" method="get">
-    <div class="col-sm-5 col-md-4">
-      <input type="text" class="form-control" name="q" value="{{ q }}"
-             placeholder="Buscar por RUT (con o sin puntos/guion)">
-    </div>
-    <div class="col-sm-4 col-md-3">
-      <select name="estado" class="form-select">
-        <option value="todos" {% if estado == "todos" %}selected{% endif %}>Todos</option>
-        <option value="activos" {% if estado == "activos" %}selected{% endif %}>Activos</option>
-        <option value="inactivos" {% if estado == "inactivos" %}selected{% endif %}>Inactivos</option>
-      </select>
-    </div>
-    <div class="col-sm-3 col-md-2">
-      <button class="btn btn-primary w-100" type="submit">Filtrar</button>
-    </div>
-  </form>
+    .hero{
+      background:linear-gradient(135deg,var(--cosam-primary),var(--cosam-accent));
+      color:#fff; border-radius:20px; padding:28px 24px; display:grid; gap:8px;
+    }
+    .hero .kicker{opacity:.9; font-weight:600; letter-spacing:.3px; font-size:.95rem}
+    .hero h1{margin:0; font-size:clamp(1.6rem,2.5vw,2.2rem); line-height:1.15; font-weight:800}
+    .hero .sub{margin:0; opacity:.95; font-size:1.05rem}
 
-  <div class="table-responsive">
-    <table class="table align-middle table-hover">
-      <thead class="table-light">
-        <tr>
-          <th>RUT</th>
-          <th>Nombre</th>
-          <th class="text-center">Activo</th>
-          <th class="text-end">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in page_obj.object_list %}
-          <tr>
-            <td class="text-nowrap">{{ p.rut }}</td>
-            <td>
-              <a href="{% url 'paciente_detail' p.pk %}" class="text-decoration-none">
-                {{ p.nombres }} {{ p.apellidos }}
+    .card{
+      background:var(--white);
+      border-radius:16px;
+      box-shadow:0 12px 30px rgba(2,8,23,.06),0 2px 8px rgba(2,8,23,.03);
+      border:1px solid rgba(2,8,23,.06);
+      margin-top:22px;
+    }
+    .card-h{padding:18px 18px 0 18px; border-bottom:1px solid rgba(2,8,23,.06)}
+    .card-h h2{margin:0; font-size:1.1rem; font-weight:800; color:var(--ink-700)}
+    .card-b{padding:18px}
+
+    .filters{
+      display:grid; gap:12px; grid-template-columns: 1.6fr 1fr .8fr;
+    }
+    @media (max-width: 900px){ .filters{ grid-template-columns: 1fr 1fr } }
+    @media (max-width: 640px){ .filters{ grid-template-columns: 1fr } }
+
+    .form-control, .form-select{
+      width:100%; padding:10px 12px; border-radius:10px;
+      border:1px solid var(--ink-300); background:#fff; font-size:1rem; outline:none;
+    }
+    .form-control:focus, .form-select:focus{
+      border-color:rgba(23,105,170,.55);
+      box-shadow:0 0 0 4px rgba(23,105,170,.12);
+    }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; width:100%;
+      padding:.85rem 1.15rem; border-radius:12px; font-weight:800; cursor:pointer;
+      border:2px solid transparent; background:var(--cosam-primary); color:#fff;
+      box-shadow:0 10px 18px rgba(23,105,170,.25);
+    }
+    .btn:active{ transform: translateY(1px) }
+    .btn-outline{
+      background:#fff; color:var(--cosam-primary); border:2px solid rgba(23,105,170,.35); border-radius:12px;font-weight: 700;
+    }
+    .btn-outline:hover{background:rgba(23,105,170,.06)}
+    .btn-registro{
+      padding:.85rem 1.15rem; border-radius:12px; font-weight:800; cursor:pointer;
+      border:2px solid transparent; background:var(--cosam-primary); color:#fff;
+      box-shadow:0 10px 18px rgba(23,105,170,.25);
+    }
+    .btn-registro:active{ transform: translateY(1px) }
+
+    .table-responsive{width:100%; overflow:auto; border-radius:12px; border:1px solid rgba(2,8,23,.06)}
+    table{width:100%; border-collapse:separate; border-spacing:0}
+    thead th{
+      text-align:left; font-weight:800; color:var(--ink-700);
+      background:#f1f5f9; border-bottom:1px solid rgba(2,8,23,.08);
+      padding:12px 14px;
+    }
+    tbody td{ padding:12px 14px; border-bottom:1px solid rgba(2,8,23,.06); vertical-align:middle }
+    tbody tr:hover{ background:#f8fafc }
+    .text-center{text-align:center} .text-end{text-align:right} .text-nowrap{white-space:nowrap}
+
+    .badge{
+      display:inline-block; padding:.3rem .55rem; border-radius:999px; font-size:.8rem; font-weight:700;
+    }
+    .bg-success{ background:#dcfce7; color:#166534; border:1px solid #86efac }
+    .bg-secondary{ background:#e2e8f0; color:#334155; border:1px solid #cbd5e1 }
+
+    .btn-sm{
+      padding:.55rem .8rem; font-weight:700; border-radius:10px; background:#fff;
+      color:var(--cosam-primary); border:2px solid rgba(23,105,170,.35);
+    }
+    .btn-sm:hover{ background:rgba(23,105,170,.06) }
+
+    .pagination{display:flex; gap:6px; list-style:none; padding:0; margin:16px 0 0 0}
+    .page-item .page-link, .page-item span.page-link{
+      display:inline-flex; align-items:center; justify-content:center; min-width:40px; height:40px;
+      padding:0 .6rem; border-radius:10px; border:1px solid rgba(2,8,23,.12);
+      background:#fff; color:var(--ink-700); font-weight:700;
+    }
+    .page-item.disabled .page-link{ opacity:.45; pointer-events:none }
+    .page-item.active .page-link, .page-item.active span.page-link{
+      background:var(--cosam-primary); color:#fff; border-color:transparent;
+      box-shadow:0 8px 16px rgba(23,105,170,.22);
+    }
+    nav[aria-label="Paginación"]{ margin-top:12px }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <span class="kicker">MiHora Lampa · Recepción</span>
+      <h1>Pacientes</h1>
+      <p class="sub">Busque por RUT, filtre por estado y acceda al perfil rápidamente.</p>
+    </section>
+
+    <!-- BOTONES SUPERIORES -->
+    <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <!-- Botón Volver -->
+      <a href="{% url 'recepcion_home' %}" class="btn-outline" style="padding:.75rem 1.1rem; font-size:.95rem;">
+        Volver al Panel Recepción
+      </a>
+
+      <!-- Botón Crear Paciente -->
+      <a href="{% url 'registrar_paciente' %}" class="btn-registro" style="padding:.75rem 1.1rem; font-size:.95rem;">
+        + Crear Paciente
+      </a>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Listado</h2></div>
+      <div class="card-b">
+        <!-- Filtros -->
+        <form class="filters" method="get">
+          <div>
+            <input type="text" class="form-control" name="q" value="{{ q }}"
+                   placeholder="Buscar por RUT (con o sin puntos/guion)">
+          </div>
+          <div>
+            <select name="estado" class="form-select">
+              <option value="todos" {% if estado == "todos" %}selected{% endif %}>Todos</option>
+              <option value="activos" {% if estado == "activos" %}selected{% endif %}>Activos</option>
+              <option value="inactivos" {% if estado == "inactivos" %}selected{% endif %}>Inactivos</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn" type="submit">Filtrar</button>
+          </div>
+        </form>
+
+        <!-- Tabla -->
+        <div class="table-responsive" style="margin-top:14px;">
+          <table class="table align-middle table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>RUT</th>
+                <th>Nombre</th>
+                <th class="text-center">Activo</th>
+                <th class="text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in page_obj.object_list %}
+                <tr>
+                  <td class="text-nowrap">{{ p.rut }}</td>
+                  <td>
+                    <a href="{% url 'paciente_detail' p.pk %}">
+                      {{ p.nombres }} {{ p.apellidos }}
+                    </a>
+                  </td>
+                  <td class="text-center">
+                    {% if p.is_active %}
+                      <span class="badge bg-success">✓</span>
+                    {% else %}
+                      <span class="badge bg-secondary">✗</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <a class="btn-sm" href="{% url 'paciente_detail' p.pk %}">Ver perfil</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-center" style="padding:24px;">No hay pacientes para mostrar.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav aria-label="Paginación">
+          <ul class="pagination justify-content-center">
+            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+              <a class="page-link"
+                 href="?page=1{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">«</a>
+            </li>
+            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+              <a class="page-link"
+                 href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">
+                Anterior
               </a>
-            </td>
-            <td class="text-center">
-              {% if p.is_active %}
-                <span class="badge bg-success">Sí</span>
-              {% else %}
-                <span class="badge bg-secondary">No</span>
+            </li>
+
+            {% for num in page_obj.paginator.page_range %}
+              {% if num == page_obj.number %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+              {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+                <li class="page-item">
+                  <a class="page-link"
+                     href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">
+                    {{ num }}
+                  </a>
+                </li>
               {% endif %}
-            </td>
-            <td class="text-end">
-              <a class="btn btn-sm btn-outline-primary" href="{% url 'paciente_detail' p.pk %}">
-                Ver perfil
+            {% endfor %}
+
+            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+              <a class="page-link"
+                 href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">
+                Siguiente
               </a>
-            </td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="4" class="text-center py-4">No hay pacientes para mostrar.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  {% if page_obj.paginator.num_pages > 1 %}
-  <nav aria-label="Paginación">
-    <ul class="pagination justify-content-center">
-      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-        <a class="page-link"
-           href="?page=1{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">«</a>
-      </li>
-      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-        <a class="page-link"
-           href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">
-          Anterior
-        </a>
-      </li>
-
-      {% for num in page_obj.paginator.page_range %}
-        {% if num == page_obj.number %}
-          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-        {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
-          <li class="page-item">
-            <a class="page-link"
-               href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">
-              {{ num }}
-            </a>
-          </li>
+            </li>
+            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+              <a class="page-link"
+                 href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">»</a>
+            </li>
+          </ul>
+        </nav>
         {% endif %}
-      {% endfor %}
-
-      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
-        <a class="page-link"
-           href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">
-          Siguiente
-        </a>
-      </li>
-      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
-        <a class="page-link"
-           href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">»</a>
-      </li>
-    </ul>
-  </nav>
-  {% endif %}
-</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,96 +1,415 @@
-{# templates/pacientes/editar.html #}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0">Editar paciente</h1>
-    <div>
-      <a href="{% url 'paciente_detail' paciente.pk %}" class="btn btn-outline-secondary btn-sm">Cancelar</a>
-    </div>
-  </div>
+<!doctype html>
+<html lang="es">
 
-  <form id="paciente-edit-form" method="post" class="card shadow-sm">
-    {% csrf_token %}
-    <div class="card-body">
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">RUT</label>
-          {{ form.rut }}
-          <div class="form-text">El RUT no se puede modificar.</div>
-          {% if form.rut.errors %}<div class="text-danger small">{{ form.rut.errors }}</div>{% endif %}
-        </div>
+<head>
+  <meta charset="utf-8" />
+  <title>Editar paciente – MiHora Lampa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --cosam-primary: #1769aa;
+      --cosam-accent: #2aa86b;
+      --ink-900: #0f172a;
+      --ink-700: #334155;
+      --ink-500: #64748b;
+      --ink-300: #cbd5e1;
+      --bg-50: #f8fafc;
+      --white: #fff;
+      --success-bg: #dcfce7;
+      --success-bd: #86efac;
+      --success-tx: #166534;
+      --error-bg: #fee2e2;
+      --error-bd: #fca5a5;
+      --error-tx: #991b1b;
+    }
 
-        <div class="col-md-4">
-          <label class="form-label">Nombres</label>
-          {{ form.nombres }}
-          {% if form.nombres.errors %}<div class="text-danger small">{{ form.nombres.errors }}</div>{% endif %}
-        </div>
+    * {
+      box-sizing: border-box
+    }
 
-        <div class="col-md-4">
-          <label class="form-label">Apellidos</label>
-          {{ form.apellidos }}
-          {% if form.apellidos.errors %}<div class="text-danger small">{{ form.apellidos.errors }}</div>{% endif %}
-        </div>
+    html,
+    body {
+      height: 100%
+    }
 
-        <div class="col-md-4">
-          <label class="form-label">Email</label>
-          {{ form.email }}
-          <div class="form-text">Si cambias el correo, se podrá enviar una clave temporal.</div>
-          {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
-        </div>
+    body {
+      margin: 0;
+      background: var(--bg-50);
+      color: var(--ink-900);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
 
-        <div class="col-md-4">
-          <label class="form-label">Teléfono</label>
-          {{ form.telefono }}
-          {% if form.telefono.errors %}<div class="text-danger small">{{ form.telefono.errors }}</div>{% endif %}
-        </div>
+    a {
+      text-decoration: none;
+      color: inherit
+    }
 
-        <div class="col-md-4">
-          <label class="form-label">Fecha de nacimiento</label>
-          {{ form.fecha_nacimiento }}
-          {% if form.fecha_nacimiento.errors %}<div class="text-danger small">{{ form.fecha_nacimiento.errors }}</div>{% endif %}
-        </div>
+    .container {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 24px
+    }
 
-        <div class="col-12">
-          <label class="form-label">Dirección</label>
-          {{ form.direccion }}
-          {% if form.direccion.errors %}<div class="text-danger small">{{ form.direccion.errors }}</div>{% endif %}
-        </div>
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, var(--cosam-primary), var(--cosam-accent));
+      color: #fff;
+      border-radius: 20px;
+      padding: 28px 24px;
+      display: grid;
+      gap: 8px;
+    }
 
-        <div class="col-md-4">
-          <div class="form-check mt-2">
-            {{ form.is_active }}
-            <label class="form-check-label">Paciente activo</label>
-          </div>
-          {% if form.is_active.errors %}<div class="text-danger small">{{ form.is_active.errors }}</div>{% endif %}
-        </div>
-      </div>
-    </div>
-    <div class="card-footer text-end">
-      <button class="btn btn-primary" type="submit">Guardar cambios</button>
-    </div>
-  </form>
-</div>
+    .hero .kicker {
+      opacity: .9;
+      font-weight: 600;
+      letter-spacing: .3px;
+      font-size: .95rem
+    }
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const form = document.getElementById('paciente-edit-form');
-  const emailInput = document.querySelector('input[name="email"]');
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+      line-height: 1.15;
+      font-weight: 800
+    }
 
-  if (!form || !emailInput) return;
+    .hero .sub {
+      margin: 0;
+      opacity: .95;
+      font-size: 1.05rem
+    }
 
-  const original = (emailInput.dataset.originalEmail || '').trim().toLowerCase();
+    /* TOP BAR */
+    .bar {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap
+    }
 
-  form.addEventListener('submit', function (e) {
-    const current = (emailInput.value || '').trim().toLowerCase();
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: .6rem .9rem;
+      border-radius: 12px;
+      font-weight: 800;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform .05s ease, box-shadow .15s ease;
+    }
 
-    if (original !== current) {
-      if (current) {
-        const ok = confirm('Se enviará una contraseña temporal al nuevo correo del paciente. ¿Deseas continuar?');
-        if (!ok) { e.preventDefault(); return; }
-      } else {
-        const ok = confirm('Al borrar el correo, se eliminará la contraseña y el paciente perderá acceso web. ¿Deseas continuar?');
-        if (!ok) { e.preventDefault(); return; }
+    .btn:active {
+      transform: translateY(1px)
+    }
+
+    .btn-outline {
+      background: #fff;
+      color: var(--cosam-primary);
+      border: 2px solid rgba(23, 105, 170, .35)
+    }
+
+    .btn-outline:hover {
+      background: rgba(23, 105, 170, .06)
+    }
+
+    .btn-primary {
+      background: var(--cosam-primary);
+      color: #fff;
+      box-shadow: 0 10px 18px rgba(23, 105, 170, .25)
+    }
+
+    .btn-primary:hover {
+      filter: brightness(.97)
+    }
+
+    .btn[disabled] {
+      opacity: .7;
+      cursor: not-allowed;
+      box-shadow: none
+    }
+
+    /* CARD */
+    .card {
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(2, 8, 23, .06), 0 2px 8px rgba(2, 8, 23, .03);
+      border: 1px solid rgba(2, 8, 23, .06);
+      margin-top: 22px;
+    }
+
+    .card-h {
+      padding: 18px 18px 0 18px;
+      border-bottom: 1px solid rgba(2, 8, 23, .06)
+    }
+
+    .card-h h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--ink-700)
+    }
+
+    .card-b {
+      padding: 18px
+    }
+
+    .card-f {
+      padding: 12px 18px;
+      border-top: 1px solid rgba(2, 8, 23, .06);
+      display: flex;
+      justify-content: flex-end
+    }
+
+    /* MESSAGES */
+    .alerts {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 12px
+    }
+
+    .alert {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(2, 8, 23, .12);
+      background: #fff;
+      color: var(--ink-700);
+      font-weight: 600
+    }
+
+    .alert-success {
+      background: var(--success-bg);
+      border-color: var(--success-bd);
+      color: var(--success-tx)
+    }
+
+    .alert-error,
+    .alert-danger {
+      background: var(--error-bg);
+      border-color: var(--error-bd);
+      color: var(--error-tx)
+    }
+
+    /* FORM */
+    form {
+      width: 100%
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(12, 1fr)
+    }
+
+    .col-4 {
+      grid-column: span 4
+    }
+
+    .col-12 {
+      grid-column: 1 / -1
+    }
+
+    @media (max-width: 900px) {
+      .col-4 {
+        grid-column: 1 / -1
       }
     }
-  });
-});
-</script>
+
+    label {
+      font-weight: 800;
+      color: var(--ink-700);
+      margin-bottom: 6px;
+      display: block
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--ink-300);
+      background: #fff;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    input[disabled] {
+      background: #f1f5f9
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(23, 105, 170, .55);
+      box-shadow: 0 0 0 4px rgba(23, 105, 170, .12);
+    }
+
+    .help {
+      color: var(--ink-500);
+      font-size: .9rem;
+      margin-top: 4px
+    }
+
+    .error {
+      color: var(--error-tx);
+      font-size: .9rem;
+      margin-top: 6px
+    }
+
+    /* CHECK */
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px
+    }
+
+    .check input[type="checkbox"] {
+      width: auto;
+      height: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- HERO -->
+    <section class="hero">
+      <span class="kicker">MiHora Lampa · Recepción</span>
+      <h1>Editar paciente</h1>
+      <p class="sub">Actualice los datos del paciente. El RUT no se puede modificar.</p>
+    </section>
+
+    <!-- TOP BAR (Volver / Cancelar) -->
+    <div class="bar">
+      <a href="{% url 'paciente_detail' paciente.pk %}" class="btn btn-outline">Cancelar y volver</a>
+      <!-- Lugar reservado por si agregas otra acción -->
+      <span></span>
+    </div>
+
+    <!-- FORM CARD -->
+    <form id="paciente-edit-form" method="post" class="card">
+      {% csrf_token %}
+
+      <div class="card-h">
+        <h2>Formulario</h2>
+      </div>
+      <div class="card-b">
+
+        {# MENSAJES DJANGO (opcional, por si usas messages en la vista) #}
+        {% if messages %}
+        <div class="alerts">
+          {% for m in messages %}
+          <div
+            class="alert {% if 'success' in m.tags %}alert-success{% elif 'error' in m.tags or 'danger' in m.tags %}alert-error{% endif %}">
+            {{ m }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="form-grid">
+          <div class="col-4">
+            <label for="{{ form.rut.id_for_label }}">RUT</label>
+            {{ form.rut }}
+            <div class="help">El RUT no se puede modificar.</div>
+            {% if form.rut.errors %}<div class="error">{{ form.rut.errors }}</div>{% endif %}
+          </div>
+
+          <div class="col-4">
+            <label for="{{ form.nombres.id_for_label }}">Nombres</label>
+            {{ form.nombres }}
+            {% if form.nombres.errors %}<div class="error">{{ form.nombres.errors }}</div>{% endif %}
+          </div>
+
+          <div class="col-4">
+            <label for="{{ form.apellidos.id_for_label }}">Apellidos</label>
+            {{ form.apellidos }}
+            {% if form.apellidos.errors %}<div class="error">{{ form.apellidos.errors }}</div>{% endif %}
+          </div>
+
+          <div class="col-4">
+            <label for="{{ form.email.id_for_label }}">Email</label>
+            {# SUGERENCIA: si puedes, agrega data-original-email desde el form widget #}
+            {{ form.email }}
+            <div class="help">Si cambias el correo, se podrá enviar una clave temporal.</div>
+            {% if form.email.errors %}<div class="error">{{ form.email.errors }}</div>{% endif %}
+          </div>
+
+          <div class="col-4">
+            <label for="{{ form.telefono.id_for_label }}">Teléfono</label>
+            {{ form.telefono }}
+            {% if form.telefono.errors %}<div class="error">{{ form.telefono.errors }}</div>{% endif %}
+          </div>
+
+          <div class="col-4">
+            <label for="{{ form.fecha_nacimiento.id_for_label }}">Fecha de nacimiento</label>
+            {{ form.fecha_nacimiento }}
+            {% if form.fecha_nacimiento.errors %}<div class="error">{{ form.fecha_nacimiento.errors }}</div>{% endif %}
+          </div>
+
+          <div class="col-12">
+            <label for="{{ form.direccion.id_for_label }}">Dirección</label>
+            {{ form.direccion }}
+            {% if form.direccion.errors %}<div class="error">{{ form.direccion.errors }}</div>{% endif %}
+          </div>
+
+          <div class="col-4">
+            <div class="check">
+              {{ form.is_active }}
+              <label for="{{ form.is_active.id_for_label }}">Paciente activo</label>
+            </div>
+            {% if form.is_active.errors %}<div class="error">{{ form.is_active.errors }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card-f">
+        <button class="btn btn-primary" type="submit">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.getElementById('paciente-edit-form');
+      const emailInput = document.querySelector('input[name="email"]');
+      if (!form || !emailInput) return;
+
+      // Toma el original desde data-original-email si existe; si no, toma el valor inicial del control al cargar.
+      const original = (
+        (emailInput.dataset && emailInput.dataset.originalEmail) ?
+          emailInput.dataset.originalEmail :
+          emailInput.value
+      ).trim().toLowerCase();
+
+      form.addEventListener('submit', function (e) {
+        const current = (emailInput.value || '').trim().toLowerCase();
+        if (original !== current) {
+          if (current) {
+            const ok = confirm('Se enviará una contraseña temporal al nuevo correo del paciente. ¿Deseas continuar?');
+            if (!ok) { e.preventDefault(); return; }
+          } else {
+            const ok = confirm('Al borrar el correo, se eliminará la contraseña y el paciente perderá acceso web. ¿Deseas continuar?');
+            if (!ok) { e.preventDefault(); return; }
+          }
+        }
+
+        // Protección contra doble envío
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Guardando...';
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
