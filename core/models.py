@@ -142,7 +142,6 @@ class Agenda(models.Model):
             models.Index(fields=["profesional", "inicio", "fin"]),
         ]
         constraints = [
-            # Evita bloques duplicados exactos para el mismo profesional
             models.UniqueConstraint(fields=["profesional", "inicio", "fin"], name="uk_agenda_prof_inicio_fin"),
         ]
 
@@ -150,7 +149,6 @@ class Agenda(models.Model):
     ubicacion = models.ForeignKey(Ubicacion, on_delete=models.PROTECT, related_name="agendas")
     inicio = models.DateTimeField()
     fin = models.DateTimeField()
-    capacidad = models.PositiveSmallIntegerField(default=1)  # >1 si es grupal
     modalidad = models.CharField(max_length=20, choices=Modalidad.choices, default=Modalidad.PRESENCIAL)
     observaciones = models.CharField(max_length=255, blank=True, null=True)
     creado_en = models.DateTimeField(auto_now_add=True)
@@ -163,6 +161,7 @@ class Agenda(models.Model):
 
     def __str__(self):
         return f"{self.profesional} | {self.inicio:%d/%m %H:%M}-{self.fin:%H:%M} ({self.ubicacion})"
+
 
 
 # =========================
@@ -216,30 +215,26 @@ class Cita(models.Model):
         verbose_name = "Cita"
         verbose_name_plural = "Citas"
         indexes = [
-            models.Index(fields=["agenda", "estado"]),
+            models.Index(fields=["agenda"]),
             models.Index(fields=["paciente"]),
         ]
 
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name="citas")
-    agenda = models.ForeignKey(Agenda, on_delete=models.CASCADE, related_name="citas")
+    agenda = models.OneToOneField(Agenda, on_delete=models.CASCADE, related_name="cita")  # <- OneToOne
     estado = models.ForeignKey(EstadoCita, on_delete=models.PROTECT, related_name="citas")
 
     motivo = models.CharField(max_length=255, blank=True, null=True)
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        on_delete=models.SET_NULL, null=True, blank=True,
         related_name="citas_registradas"
     )
     creado_en = models.DateTimeField(auto_now_add=True)
-    actualizado_en = models.DateTimeField(auto_now_add=False, auto_now=True)
-
-    # Nota: si quieres "1 cita por agenda" cuando capacidad=1,
-    # valida a nivel de servicio usando select_for_update() y conteo antes de crear.
+    actualizado_en = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Cita de {self.paciente} con {self.agenda.profesional} el {self.agenda.inicio:%d/%m %H:%M}"
+
 
 
 # =========================
@@ -344,3 +339,55 @@ class PacienteResetToken(models.Model):
     def is_valid(self):
         now = timezone.now()
         return self.used_at is None and now <= self.expires_at
+
+
+# =========================
+#  PLANTILLAS SEMANALES DE ATENCIÓN
+# =========================
+
+class PlantillaAtencion(models.Model):
+    class Meta:
+        db_table = "plantillas_atencion"
+        verbose_name = "Plantilla de atención"
+        verbose_name_plural = "Plantillas de atención"
+        indexes = [
+            models.Index(fields=["profesional", "dia_semana"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["profesional", "dia_semana", "hora_inicio", "hora_fin", "duracion_minutos", "modalidad", "ubicacion"],
+                name="uk_plantilla_clave"
+            ),
+        ]
+
+    class DiaSemana(models.IntegerChoices):
+        LUNES = 0, "Lunes"
+        MARTES = 1, "Martes"
+        MIERCOLES = 2, "Miércoles"
+        JUEVES = 3, "Jueves"
+        VIERNES = 4, "Viernes"
+        SABADO = 5, "Sábado"
+        DOMINGO = 6, "Domingo"
+
+    profesional = models.ForeignKey("core.Profesional", on_delete=models.CASCADE, related_name="plantillas")
+    dia_semana = models.IntegerField(choices=DiaSemana.choices)
+    hora_inicio = models.TimeField()
+    hora_fin = models.TimeField()
+    duracion_minutos = models.PositiveSmallIntegerField(default=30)
+
+    modalidad = models.CharField(max_length=20, choices=Agenda.Modalidad.choices, default=Agenda.Modalidad.PRESENCIAL)
+    ubicacion = models.ForeignKey("core.Ubicacion", on_delete=models.PROTECT, related_name="plantillas")
+
+    activo = models.BooleanField(default=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.hora_fin <= self.hora_inicio:
+            raise ValidationError("La hora de fin debe ser posterior a la de inicio.")
+        if self.duracion_minutos <= 0:
+            raise ValidationError("La duración debe ser mayor a 0.")
+
+    def __str__(self):
+        return f"{self.profesional} - {self.get_dia_semana_display()} {self.hora_inicio:%H:%M}-{self.hora_fin:%H:%M} ({self.duracion_minutos}m)"

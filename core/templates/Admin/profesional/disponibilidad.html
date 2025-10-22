@@ -1,0 +1,49 @@
+<div class="container py-4">
+  <h1 class="h4 mb-3">Mi disponibilidad</h1>
+
+  <form method="post" class="card shadow-sm">
+    {% csrf_token %}
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Desde el día</label>
+          {{ form.dia_inicio }}
+          {% if form.dia_inicio.errors %}<div class="text-danger small">{{ form.dia_inicio.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Hasta el día</label>
+          {{ form.dia_fin }}
+          {% if form.dia_fin.errors %}<div class="text-danger small">{{ form.dia_fin.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Hora inicio</label>
+          {{ form.hora_inicio }}
+          {% if form.hora_inicio.errors %}<div class="text-danger small">{{ form.hora_inicio.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Hora fin</label>
+          {{ form.hora_fin }}
+          {% if form.hora_fin.errors %}<div class="text-danger small">{{ form.hora_fin.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Duración (min)</label>
+          {{ form.duracion_minutos }}
+          {% if form.duracion_minutos.errors %}<div class="text-danger small">{{ form.duracion_minutos.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Modalidad</label>
+          {{ form.modalidad }}
+          {% if form.modalidad.errors %}<div class="text-danger small">{{ form.modalidad.errors }}</div>{% endif %}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Ubicación</label>
+          {{ form.ubicacion }}
+          {% if form.ubicacion.errors %}<div class="text-danger small">{{ form.ubicacion.errors }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="card-footer d-flex gap-2 justify-content-end">
+      <button class="btn btn-primary" type="submit">Guardar disponibilidad</button>
+    </div>
+  </form>
+</div>

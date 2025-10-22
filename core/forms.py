@@ -2,7 +2,8 @@ from django import forms
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.core.exceptions import ValidationError
 import re
-from .models import Paciente
+from .models import Paciente, PlantillaAtencion, Ubicacion, Agenda
+import string
 from datetime import date
 
 class CustomPasswordResetForm(PasswordResetForm):
@@ -420,3 +421,35 @@ class PacienteEditForm(forms.ModelForm):
     def has_email_changed(self):
         new = ((self.cleaned_data.get("email") or "").strip().lower())
         return self._original_email != new
+
+class ProfesionalHorarioForm(forms.Form):
+    DIA_CHOICES = PlantillaAtencion.DiaSemana.choices
+
+    dia_inicio = forms.ChoiceField(choices=DIA_CHOICES, label="Desde el día",
+                                   widget=forms.Select(attrs={"class":"form-select"}))
+    dia_fin = forms.ChoiceField(choices=DIA_CHOICES, label="Hasta el día",
+                                widget=forms.Select(attrs={"class":"form-select"}))
+    hora_inicio = forms.TimeField(label="Hora de inicio",
+                                  widget=forms.TimeInput(attrs={"type": "time", "class":"form-control"}))
+    hora_fin = forms.TimeField(label="Hora de fin",
+                               widget=forms.TimeInput(attrs={"type": "time", "class":"form-control"}))
+    duracion_minutos = forms.IntegerField(min_value=5, max_value=240, initial=30,
+                                          label="Duración por cita (min)",
+                                          widget=forms.NumberInput(attrs={"class":"form-control"}))
+    modalidad = forms.ChoiceField(choices=Agenda.Modalidad.choices, initial=Agenda.Modalidad.PRESENCIAL,
+                                  widget=forms.Select(attrs={"class":"form-select"}))
+    ubicacion = forms.ModelChoiceField(queryset=Ubicacion.objects.all(), label="Ubicación",
+                                       widget=forms.Select(attrs={"class":"form-select"}))
+
+    def clean(self):
+        cleaned = super().clean()
+        hi = cleaned.get("hora_inicio"); hf = cleaned.get("hora_fin")
+        if hi and hf and hf <= hi:
+            self.add_error("hora_fin", "La hora de fin debe ser posterior a la de inicio.")
+        return cleaned
+
+    def dias_en_rango(self):
+        a = int(self.cleaned_data["dia_inicio"])
+        b = int(self.cleaned_data["dia_fin"])
+        return list(range(a, b+1)) if a <= b else list(range(a, 7)) + list(range(0, b+1))
+

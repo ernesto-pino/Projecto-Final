@@ -4,16 +4,23 @@ from .utils import user_has_role, crear_token_reset, obtener_token_valido, gener
 from .decorators import role_required, paciente_login_required
 from .models import *
 from django.contrib import messages
-from .forms import LoginPacienteForm, CambioPasswordPacienteForm, SolicitarResetForm, ResetPasswordForm, PacienteCreateForm, PacienteEditForm
+from .forms import LoginPacienteForm, CambioPasswordPacienteForm, SolicitarResetForm, ResetPasswordForm, PacienteCreateForm, PacienteEditForm , ProfesionalHorarioForm
 from django.urls import reverse
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.db.models.functions import Replace, Upper
-from django.db.models import F, Value
+from django.db.models import F, Value, Prefetch
 from django.core.paginator import Paginator
 import re, datetime
 from django.db import transaction
+from django.utils.dateparse import parse_date
+from core.agendas import (
+    crear_plantillas_basicas,
+    generar_agendas_para_profesional,
+    actualizar_disponibilidad_y_regenerar,
+)
+
 
 #renderizado de paginas
 def home(request):
@@ -421,3 +428,96 @@ def paciente_edit(request, pk):
         form = PacienteEditForm(instance=paciente)
 
     return render(request, "admin/recepcion/listado_editar_paciente.html", {"form": form, "paciente": paciente})
+
+def recep_agendas_list(request):
+    fecha_str = request.GET.get("fecha")    # yyyy-mm-dd
+    prof_id = request.GET.get("prof")       # id profesional
+    estado = request.GET.get("estado", "todos")  # todos | libres | ocupados
+
+    fecha = parse_date(fecha_str) if fecha_str else timezone.localdate()
+    tz = timezone.get_current_timezone()
+    inicio_dia = timezone.make_aware(datetime.datetime.combine(fecha, datetime.time.min), tz)
+    fin_dia    = timezone.make_aware(datetime.datetime.combine(fecha, datetime.time.max), tz)
+
+
+    qs = (Agenda.objects
+          .filter(inicio__gte=inicio_dia, inicio__lte=fin_dia)
+          .select_related("profesional", "ubicacion", "profesional__especialidad")
+          .order_by("inicio", "profesional__apellido", "profesional__nombre"))
+
+    if prof_id:
+        qs = qs.filter(profesional_id=prof_id)
+
+    qs = qs.prefetch_related(Prefetch("cita", queryset=Cita.objects.select_related("paciente", "estado")))
+
+    if estado == "libres":
+        agendas = [a for a in qs if not hasattr(a, "cita")]
+    elif estado == "ocupados":
+        agendas = [a for a in qs if hasattr(a, "cita")]
+    else:
+        agendas = list(qs)
+
+    profesionales = Profesional.objects.filter(activo=True).order_by("apellido", "nombre")
+
+    ctx = {
+        "agendas": agendas,
+        "profesionales": profesionales,
+        "fecha": fecha,
+        "f_fecha": fecha.strftime("%Y-%m-%d"),
+        "prof_id": int(prof_id) if prof_id else None,
+        "estado": estado,
+    }
+    return render(request, "admin/profesional/listado_agendas.html", ctx)
+
+def pro_setup_horario(request):
+    if not user_has_role(request.user, "Profesional"):
+        messages.error(request, "No tienes permisos para esta sección.")
+        return redirect("recep_agendas_list")
+
+    prof = get_object_or_404(Profesional, usuario=request.user, activo=True)
+
+    initial = {}
+    sala = Ubicacion.objects.filter(nombre__iexact="Sala").first()
+    if sala:
+        initial["ubicacion"] = sala.pk
+
+    if request.method == "POST":
+        form = ProfesionalHorarioForm(request.POST)
+        if form.is_valid():
+            dias = form.dias_en_rango()
+            regenerados = actualizar_disponibilidad_y_regenerar(
+                prof=prof,
+                dias=dias,
+                hora_inicio=form.cleaned_data["hora_inicio"],
+                hora_fin=form.cleaned_data["hora_fin"],
+                duracion=form.cleaned_data["duracion_minutos"],
+                modalidad=form.cleaned_data["modalidad"],
+                ubicacion=form.cleaned_data["ubicacion"],
+                reemplazar_futuros_libres=True,   # <- siempre borrar libres futuros
+                weeks_ahead=8,
+            )
+            messages.success(
+                request,
+                f"Disponibilidad actualizada. Se eliminaron bloques libres futuros y se generaron {regenerados} nuevos."
+            )
+            return redirect("recep_agendas_list")  # o dashboard del profesional
+        else:
+            messages.error(request, "Revisa los errores del formulario.")
+    else:
+        activa = (PlantillaAtencion.objects
+                  .filter(profesional=prof, activo=True)
+                  .order_by("dia_semana", "hora_inicio"))
+        form = ProfesionalHorarioForm(initial=initial)
+        if activa.exists():
+            dias = sorted({p.dia_semana for p in activa})
+            if dias:
+                form.fields["dia_inicio"].initial = str(min(dias))
+                form.fields["dia_fin"].initial = str(max(dias))
+            form.fields["hora_inicio"].initial = min(p.hora_inicio for p in activa)
+            form.fields["hora_fin"].initial  = max(p.hora_fin for p in activa)
+            form.fields["duracion_minutos"].initial = activa.first().duracion_minutos
+            form.fields["modalidad"].initial = activa.first().modalidad
+            form.fields["ubicacion"].initial = activa.first().ubicacion_id
+
+    return render(request, "admin/profesional/disponibilidad.html", {"form": form, "prof": prof})
+

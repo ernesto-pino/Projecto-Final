@@ -55,6 +55,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "core.middleware.PacienteForcePasswordChangeMiddleware",
+    "core.middleware.ensure_prof_setup_middleware",
 ]
 
 ROOT_URLCONF = 'MiHora_Lampa.urls'

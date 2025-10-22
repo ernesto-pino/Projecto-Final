@@ -68,7 +68,7 @@ class EstadoCitaAdmin(admin.ModelAdmin):
 
 @admin.register(Agenda)
 class AgendaAdmin(admin.ModelAdmin):
-    list_display = ("id", "profesional", "ubicacion", "inicio", "fin", "capacidad", "modalidad")
+    list_display = ("id", "profesional", "ubicacion", "inicio", "fin", "modalidad")
     list_filter = ("profesional", "ubicacion", "modalidad")
     search_fields = ("profesional__nombre", "profesional__apellido", "ubicacion__nombre")
     date_hierarchy = "inicio"

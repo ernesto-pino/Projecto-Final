@@ -1,0 +1,65 @@
+<div class="container py-4">
+  <h1 class="h4 mb-3">Agendas</h1>
+
+  <form method="get" class="row g-2 mb-3">
+    <div class="col-sm-3">
+      <input type="date" name="fecha" class="form-control" value="{{ f_fecha }}">
+    </div>
+    <div class="col-sm-4">
+      <select name="prof" class="form-select">
+        <option value="">Todos los profesionales</option>
+        {% for pr in profesionales %}
+          <option value="{{ pr.id }}" {% if prof_id == pr.id %}selected{% endif %}>
+            {{ pr.nombre }} {{ pr.apellido }} – {{ pr.especialidad.nombre }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-3">
+      <select name="estado" class="form-select">
+        <option value="todos" {% if estado == "todos" %}selected{% endif %}>Todos</option>
+        <option value="libres" {% if estado == "libres" %}selected{% endif %}>Libres</option>
+        <option value="ocupados" {% if estado == "ocupados" %}selected{% endif %}>Ocupados</option>
+      </select>
+    </div>
+    <div class="col-sm-2">
+      <button class="btn btn-primary w-100" type="submit">Filtrar</button>
+    </div>
+  </form>
+  
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Hora</th>
+          <th>Profesional</th>
+          <th>Especialidad</th>
+          <th>Modalidad</th>
+          <th>Ubicación</th>
+          <th>Estado</th>
+          <th>Paciente</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in agendas %}
+          <tr>
+            <td class="text-nowrap">{{ a.inicio|date:"H:i" }}–{{ a.fin|date:"H:i" }}</td>
+            <td>{{ a.profesional.nombre }} {{ a.profesional.apellido }}</td>
+            <td>{{ a.profesional.especialidad.nombre }}</td>
+            <td>{{ a.get_modalidad_display }}</td>
+            <td>{{ a.ubicacion.nombre }}</td>
+            {% if a.cita %}
+              <td><span class="badge bg-secondary">Ocupado</span></td>
+              <td>{{ a.cita.paciente.nombre_completo }}</td>
+            {% else %}
+              <td><span class="badge bg-success">Libre</span></td>
+              <td>—</td>
+            {% endif %}
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-center py-4">No hay agendas para los filtros seleccionados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

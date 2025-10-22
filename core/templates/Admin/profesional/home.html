@@ -275,6 +275,10 @@
       <p class="sub">
         Hoy es {% now "l d \\d\\e F, Y" %}. Revise su agenda y gestione a sus pacientes.
       </p>
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-sm">Salir</button>
+      </form>
     </section>
 
     <!-- CONTENIDO PRINCIPAL -->

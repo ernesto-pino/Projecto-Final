@@ -47,9 +47,11 @@ urlpatterns = [
     path("panel/recepcion/pacientes", views.paciente_list, name="paciente_list"),
     path("panel/recepcion/pacientes/<int:pk>/", views.paciente_detail, name="paciente_detail"),
     path("panel/recepcion/pacientes/<int:pk>/editar/", views.paciente_edit, name="paciente_edit"),
+    path("panel/recepcion/agendas/", views.recep_agendas_list, name="recep_agendas_list"),
 
     #profesional
     path("panel/profesional/", views.profesional_home, name="profesional_home"),
+    path("panel/profesional/disponibilidad/", views.pro_setup_horario, name="pro_setup_horario"),
 
     #portal pacientes    
     path("paciente/ingreso/", views.login_paciente, name="login_paciente"),
