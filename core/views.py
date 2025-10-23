@@ -494,7 +494,6 @@ def pro_setup_horario(request):
                 duracion=form.cleaned_data["duracion_minutos"],
                 modalidad=form.cleaned_data["modalidad"],
                 ubicacion=form.cleaned_data["ubicacion"],
-                reemplazar_futuros_libres=True,   # <- siempre borrar libres futuros
                 weeks_ahead=8,
             )
             messages.success(
