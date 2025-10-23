@@ -1,0 +1,35 @@
+<div class="container py-4">
+  <h1 class="h5 mb-3">Asignar cita</h1>
+
+  <form method="post" class="card shadow-sm">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label">RUT del paciente</label>
+        {{ form.rut }}
+        {% if form.errors.rut %}<div class="text-danger small">{{ form.errors.rut }}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Estado</label>
+        {{ form.estado }}
+        {% if form.errors.estado %}<div class="text-danger small">{{ form.errors.estado }}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Motivo (opcional)</label>
+        {{ form.motivo }}
+        {% if form.errors.motivo %}<div class="text-danger small">{{ form.errors.motivo }}</div>{% endif %}
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+    </div>
+    <div class="card-footer d-flex justify-content-end gap-2">
+      <a href="{{ next|default:request.META.HTTP_REFERER|default:'#' }}" class="btn btn-outline-secondary">Cancelar</a>
+      <button class="btn btn-primary" type="submit">Asignar</button>
+    </div>
+  </form>
+</div>

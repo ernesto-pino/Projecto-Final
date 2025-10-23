@@ -48,6 +48,10 @@ urlpatterns = [
     path("panel/recepcion/pacientes/<int:pk>/", views.paciente_detail, name="paciente_detail"),
     path("panel/recepcion/pacientes/<int:pk>/editar/", views.paciente_edit, name="paciente_edit"),
     path("panel/recepcion/agendas/", views.recep_agendas_list, name="recep_agendas_list"),
+    path("panel/recepcion/agendas/<int:agenda_id>/asignar/", views.recep_asignar_cita, name="recep_asignar_cita"),
+    path("panel/recepcion/citas/<int:cita_id>/cancelar/", views.recep_cancelar_cita, name="recep_cancelar_cita"),
+    path("panel/recepcion/citas/<int:cita_id>/estado/", views.recep_cambiar_estado, name="recep_cambiar_estado"),
+
 
     #profesional
     path("panel/profesional/", views.profesional_home, name="profesional_home"),

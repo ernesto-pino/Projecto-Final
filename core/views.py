@@ -4,7 +4,7 @@ from .utils import user_has_role, crear_token_reset, obtener_token_valido, gener
 from .decorators import role_required, paciente_login_required
 from .models import *
 from django.contrib import messages
-from .forms import LoginPacienteForm, CambioPasswordPacienteForm, SolicitarResetForm, ResetPasswordForm, PacienteCreateForm, PacienteEditForm , ProfesionalHorarioForm
+from .forms import LoginPacienteForm, CambioPasswordPacienteForm, SolicitarResetForm, ResetPasswordForm, PacienteCreateForm, PacienteEditForm , ProfesionalHorarioForm, AsignarCitaForm, CambiarEstadoCitaForm
 from django.urls import reverse
 from django.core.cache import cache
 from django.core.mail import send_mail
@@ -20,7 +20,8 @@ from core.agendas import (
     generar_agendas_para_profesional,
     actualizar_disponibilidad_y_regenerar,
 )
-
+from .citas import asignar_cita, cancelar_cita, cambiar_estado
+from django.core.exceptions import ValidationError
 
 #renderizado de paginas
 def home(request):
@@ -467,7 +468,7 @@ def recep_agendas_list(request):
         "prof_id": int(prof_id) if prof_id else None,
         "estado": estado,
     }
-    return render(request, "admin/profesional/listado_agendas.html", ctx)
+    return render(request, "admin/recepcion/listado_agendas.html", ctx)
 
 def pro_setup_horario(request):
     if not user_has_role(request.user, "Profesional"):
@@ -521,3 +522,65 @@ def pro_setup_horario(request):
 
     return render(request, "admin/profesional/disponibilidad.html", {"form": form, "prof": prof})
 
+def _back_to_list(request, default="recep_agendas_list"):
+    # Vuelve al listado preservando filtros si venían en ?next=...
+    next_url = request.GET.get("next") or request.POST.get("next")
+    return redirect(next_url or reverse(default))
+
+def recep_asignar_cita(request, agenda_id: int):
+    # next permite volver al listado con los filtros
+    if request.method == "POST":
+        form = AsignarCitaForm(request.POST)
+        if form.is_valid():
+            try:
+                p = form.cleaned_data["paciente"]
+                estado = form.cleaned_data["estado"]
+                motivo = form.cleaned_data.get("motivo") or ""
+                asignar_cita(agenda_id=agenda_id, paciente=p, estado=estado, usuario=request.user, motivo=motivo)
+                messages.success(request, "Cita creada correctamente.")
+                return _back_to_list(request)
+            except ValidationError as e:
+                form.add_error(None, e.message)
+            except Exception as e:
+                form.add_error(None, f"Ocurrió un error al asignar: {e}")
+    else:
+        form = AsignarCitaForm()
+
+    return render(request, "admin/recepcion/citas_asignar.html", {
+        "form": form,
+        "agenda_id": agenda_id,
+        "next": request.GET.get("next", ""),
+    })
+
+
+def recep_cancelar_cita(request, cita_id: int):
+    if request.method == "POST":
+        try:
+            cancelar_cita(cita_id=cita_id, usuario=request.user)
+            messages.success(request, "Cita cancelada y bloque liberado.")
+        except Exception as e:
+            messages.error(request, f"No se pudo cancelar la cita: {e}")
+        return _back_to_list(request)
+    return render(request, "admin/recepcion/citas_confirmar_cancelar.html", {
+        "cita_id": cita_id,
+        "next": request.GET.get("next", ""),
+    })
+
+
+def recep_cambiar_estado(request, cita_id: int):
+    if request.method == "POST":
+        form = CambiarEstadoCitaForm(request.POST)
+        if form.is_valid():
+            try:
+                cambiar_estado(cita_id=cita_id, nuevo_estado=form.cleaned_data["estado"], usuario=request.user)
+                messages.success(request, "Estado de la cita actualizado.")
+                return _back_to_list(request)
+            except Exception as e:
+                form.add_error(None, f"No se pudo actualizar el estado: {e}")
+    else:
+        form = CambiarEstadoCitaForm()
+    return render(request, "admin/recepcion/citas_cambiar_estado.html", {
+        "form": form,
+        "cita_id": cita_id,
+        "next": request.GET.get("next", ""),
+    })

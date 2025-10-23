@@ -2,10 +2,11 @@ from django import forms
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.core.exceptions import ValidationError
 import re
-from .models import Paciente, PlantillaAtencion, Ubicacion, Agenda
+from .models import Paciente, PlantillaAtencion, Ubicacion, Agenda, EstadoCita
 import string
 from datetime import date
-
+from django.db.models.functions import Replace, Upper
+from django.db.models import F, Value
 class CustomPasswordResetForm(PasswordResetForm):
     # Personaliza el campo para mensajes y estilos
     email = forms.EmailField(
@@ -453,3 +454,41 @@ class ProfesionalHorarioForm(forms.Form):
         b = int(self.cleaned_data["dia_fin"])
         return list(range(a, b+1)) if a <= b else list(range(a, 7)) + list(range(0, b+1))
 
+RUT_RE = re.compile(r"[^0-9Kk]")  # para limpiar puntos y guion
+
+class AsignarCitaForm(forms.Form):
+    rut = forms.CharField(
+        label="RUT del paciente",
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "12.345.678-9"})
+    )
+    estado = forms.ModelChoiceField(
+        label="Estado",
+        queryset=EstadoCita.objects.all().order_by("nombre"),
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
+    motivo = forms.CharField(
+        label="Motivo (opcional)",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"})
+    )
+
+    def clean_rut(self):
+        rut = (self.cleaned_data.get("rut") or "").strip().upper()
+        rut_norm = RUT_RE.sub("", rut)  # quita . y -
+        if not rut_norm:
+            raise ValidationError("Ingresa un RUT válido.")
+        # Busca paciente por rut normalizado (tu DB guarda con guion, así que filtra tolerante)
+        p = Paciente.objects.annotate(
+            rut_norm=Replace(Replace(Upper(F("rut")), Value("."), Value("")), Value("-"), Value(""))
+        ).filter(rut_norm=rut_norm, is_active=True).first()
+        if not p:
+            raise ValidationError("No se encontró un paciente activo con ese RUT.")
+        self.cleaned_data["paciente"] = p
+        return rut
+
+class CambiarEstadoCitaForm(forms.Form):
+    estado = forms.ModelChoiceField(
+        label="Nuevo estado",
+        queryset=EstadoCita.objects.all().order_by("nombre"),
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
