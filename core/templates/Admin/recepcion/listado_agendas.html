@@ -1,82 +1,218 @@
-<div class="container py-4">
-  <h1 class="h4 mb-3">Agendas</h1>
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agendas – MiHora Lampa</title>
+    <style>
+      :root {
+        --cosam-primary: #1769aa;
+        --cosam-accent: #2aa86b;
+        --ink-900: #0f172a;
+        --ink-700: #334155;
+        --ink-500: #64748b;
+        --ink-300: #cbd5e1;
+        --bg-50: #f8fafc;
+        --white: #fff;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg-50);
+        color: var(--ink-900);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      }
+      a { text-decoration: none; color: inherit; }
+      .container { max-width: 1140px; margin: 0 auto; padding: 24px; }
 
-  <form method="get" class="row g-2 mb-3">
-    <div class="col-sm-3">
-      <input type="date" name="fecha" class="form-control" value="{{ f_fecha }}">
-    </div>
-    <div class="col-sm-4">
-      <select name="prof" class="form-select">
-        <option value="">Todos los profesionales</option>
-        {% for pr in profesionales %}
-          <option value="{{ pr.id }}" {% if prof_id == pr.id %}selected{% endif %}>
-            {{ pr.nombre }} {{ pr.apellido }} – {{ pr.especialidad.nombre }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-sm-3">
-      <select name="estado" class="form-select">
-        <option value="todos" {% if estado == "todos" %}selected{% endif %}>Todos</option>
-        <option value="libres" {% if estado == "libres" %}selected{% endif %}>Libres</option>
-        <option value="ocupados" {% if estado == "ocupados" %}selected{% endif %}>Ocupados</option>
-      </select>
-    </div>
-    <div class="col-sm-2">
-      <button class="btn btn-primary w-100" type="submit">Filtrar</button>
-    </div>
-  </form>
+      /* Hero */
+      .hero {
+        background: linear-gradient(135deg, var(--cosam-primary), var(--cosam-accent));
+        color: #fff;
+        border-radius: 20px;
+        padding: 28px 24px;
+        display: grid;
+        gap: 8px;
+      }
+      .hero .kicker { opacity: .9; font-weight: 600; letter-spacing: .3px; font-size: .95rem; }
+      .hero h1 { margin: 0; font-size: clamp(1.6rem, 2.5vw, 2.2rem); line-height: 1.15; font-weight: 800; }
+      .hero .sub { margin: 0; opacity: .95; font-size: 1.05rem; }
 
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>Hora</th>
-          <th>Profesional</th>
-          <th>Especialidad</th>
-          <th>Modalidad</th>
-          <th>Ubicación</th>
-          <th>Estado</th>
-          <th>Paciente</th>
-          <th class="text-end">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for a in agendas %}
-          <tr>
-            <td class="text-nowrap">{{ a.inicio|date:"H:i" }}–{{ a.fin|date:"H:i" }}</td>
-            <td>{{ a.profesional.nombre }} {{ a.profesional.apellido }}</td>
-            <td>{{ a.profesional.especialidad.nombre }}</td>
-            <td>{{ a.get_modalidad_display }}</td>
-            <td>{{ a.ubicacion.nombre }}</td>
+      /* Card */
+      .card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 12px 30px rgba(2, 8, 23, 0.06), 0 2px 8px rgba(2, 8, 23, 0.03);
+        border: 1px solid rgba(2, 8, 23, 0.06);
+      }
+      .card-b { padding: 18px; }
 
-            {% if a.cita %}
-              <td><span class="badge bg-secondary">Ocupado</span></td>
-              <td>{{ a.cita.paciente.nombre_completo }}</td>
-              <td class="text-end">
-                <a class="btn btn-sm btn-outline-primary" href="#">Ver</a>
-                <a class="btn btn-sm btn-outline-secondary"
-                   href="{% url 'recep_cambiar_estado' a.cita.id %}{{ next_qs }}">Estado</a>
-                <a class="btn btn-sm btn-outline-danger"
-                   href="{% url 'recep_cancelar_cita' a.cita.id %}{{ next_qs }}">Cancelar</a>
-              </td>
-            {% else %}
-              <td><span class="badge bg-success">Libre</span></td>
-              <td>—</td>
-              <td class="text-end">
-                <a class="btn btn-sm btn-success"
-                   href="{% url 'recep_asignar_cita' a.id %}{{ next_qs }}">Asignar</a>
-              </td>
-            {% endif %}
-          </tr>
-        {% empty %}
-          <tr>
-            <td colspan="8" class="text-center py-4">
-              No hay agendas para los filtros seleccionados.
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+      /* Form grid */
+      .grid-filtros {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 12px;
+        align-items: end;
+      }
+      .col-3 { grid-column: span 3; }
+      .col-4 { grid-column: span 4; }
+      .col-2 { grid-column: span 2; }
+      @media (max-width: 992px) {
+        .col-3, .col-4, .col-2 { grid-column: 1 / -1; }
+      }
+      label { display:block; font-weight:700; color:var(--ink-700); margin-bottom:6px; }
+      .form-control, .form-select {
+        width: 100%; padding: .6rem .75rem; border-radius: 12px; border: 1px solid var(--ink-300); background: #fff;
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: .9rem 1.1rem; border-radius: 12px; font-weight: 700; border: 2px solid transparent;
+        transition: transform .05s ease, box-shadow .15s ease; text-align: center; cursor: pointer;
+      }
+      .btn:active { transform: translateY(1px); }
+      .btn-primary { background: var(--cosam-primary); color:#fff; box-shadow: 0 10px 18px rgba(23,105,170,.25); }
+      .btn-primary:hover { filter: brightness(.98); }
+
+      /* Table */
+      .table-responsive { width: 100%; overflow: auto; }
+      table { width:100%; border-collapse: collapse; }
+      thead { background: #f8fafc; }
+      th, td { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+      tbody tr { border-bottom: 1px solid #f1f5f9; }
+      .text-nowrap { white-space: nowrap; }
+      .text-right { text-align: right; }
+
+      /* Badges */
+      .badge {
+        font-size: .8rem; padding: .35rem .6rem; border-radius: 999px; font-weight: 700; border: 1px solid transparent;
+        display: inline-block;
+      }
+      .badge-ocupado { background: rgba(100,116,139,.12); color:#334155; border-color: rgba(100,116,139,.18); }
+      .badge-libre   { background: rgba(42,168,107,.12); color:#2aa86b; border-color: rgba(42,168,107,.18); }
+
+      /* Small buttons in table */
+      .btn-sm { padding: .45rem .7rem; border-radius: 10px; font-weight: 700; }
+      .btn-outline-primary {
+        background:#fff; color: var(--cosam-primary); border:2px solid rgba(23,105,170,.35);
+      }
+      .btn-outline-secondary {
+        background:#fff; color:#334155; border:2px solid #cbd5e1;
+      }
+      .btn-outline-danger {
+        background:#fff; color:#b91c1c; border:2px solid rgba(185,28,28,.35);
+      }
+      .btn-success {
+        background: var(--cosam-accent); color:#fff; border:2px solid transparent;
+        box-shadow: 0 8px 14px rgba(42,168,107,.25);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- HERO -->
+      <section class="hero" aria-labelledby="hero-title">
+        <span class="kicker">MiHora Lampa · Recepción</span>
+        <h1 id="hero-title">Agendas de todo el COSAM</h1>
+        <p class="sub">Revise y gestione horarios de todos los profesionales.</p>
+      </section>
+
+      <!-- FILTROS -->
+      <section class="card" style="margin-top:20px;" aria-label="Filtros de búsqueda">
+        <div class="card-b">
+          <form method="get" class="grid-filtros">
+            <div class="col-3">
+              <label for="f_fecha">Fecha</label>
+              <input id="f_fecha" type="date" name="fecha" class="form-control" value="{{ f_fecha }}">
+            </div>
+
+            <div class="col-4">
+              <label for="f_prof">Profesional</label>
+              <select id="f_prof" name="prof" class="form-select">
+                <option value="">Todos los profesionales</option>
+                {% for pr in profesionales %}
+                  <option value="{{ pr.id }}" {% if prof_id == pr.id %}selected{% endif %}>
+                    {{ pr.nombre }} {{ pr.apellido }} – {{ pr.especialidad.nombre }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-3">
+              <label for="f_estado">Estado</label>
+              <select id="f_estado" name="estado" class="form-select">
+                <option value="todos"   {% if estado == "todos" %}selected{% endif %}>Todos</option>
+                <option value="libres"  {% if estado == "libres" %}selected{% endif %}>Libres</option>
+                <option value="ocupados"{% if estado == "ocupados" %}selected{% endif %}>Ocupados</option>
+              </select>
+            </div>
+
+            <div class="col-2">
+              <button class="btn btn-primary w-100" type="submit">Filtrar</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- TABLA -->
+      <section class="card" style="margin-top:20px;" aria-label="Listado de agendas">
+        <div class="card-b" style="padding:0;">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th>Profesional</th>
+                  <th>Especialidad</th>
+                  <th>Modalidad</th>
+                  <th>Ubicación</th>
+                  <th>Estado</th>
+                  <th>Paciente</th>
+                  <th class="text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in agendas %}
+                  <tr>
+                    <td class="text-nowrap">{{ a.inicio|date:"H:i" }}–{{ a.fin|date:"H:i" }}</td>
+                    <td>{{ a.profesional.nombre }} {{ a.profesional.apellido }}</td>
+                    <td>{{ a.profesional.especialidad.nombre }}</td>
+                    <td>{{ a.get_modalidad_display }}</td>
+                    <td>{{ a.ubicacion.nombre }}</td>
+
+                    {% if a.cita %}
+                      <td><span class="badge badge-ocupado">Ocupado</span></td>
+                      <td>{{ a.cita.paciente.nombre_completo }}</td>
+                      <td class="text-right">
+                        <a class="btn btn-sm btn-outline-primary" href="#">Ver</a>
+                        <a class="btn btn-sm btn-outline-secondary"
+                           href="{% url 'recep_cambiar_estado' a.cita.id %}{{ next_qs }}">Estado</a>
+                        <a class="btn btn-sm btn-outline-danger"
+                           href="{% url 'recep_cancelar_cita' a.cita.id %}{{ next_qs }}">Cancelar</a>
+                      </td>
+                    {% else %}
+                      <td><span class="badge badge-libre">Libre</span></td>
+                      <td>—</td>
+                      <td class="text-right">
+                        <a class="btn btn-sm btn-success"
+                           href="{% url 'recep_asignar_cita' a.id %}{{ next_qs }}">Asignar</a>
+                      </td>
+                    {% endif %}
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="8" style="text-align:center; padding:28px; color:#64748b;">
+                      No hay agendas para los filtros seleccionados.
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

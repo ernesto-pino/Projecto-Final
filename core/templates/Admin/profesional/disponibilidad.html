@@ -1,49 +1,225 @@
-<div class="container py-4">
-  <h1 class="h4 mb-3">Mi disponibilidad</h1>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mi disponibilidad – MiHora Lampa</title>
+  <style>
+    :root{
+      --cosam-primary:#1769aa;
+      --cosam-accent:#2aa86b;
+      --ink-900:#0f172a;
+      --ink-700:#334155;
+      --ink-500:#64748b;
+      --ink-300:#cbd5e1;
+      --bg-50:#f8fafc;
+      --white:#fff;
+      --danger:#d92d20;
+      --focus: rgba(23,105,170,.25);
+    }
 
-  <form method="post" class="card shadow-sm">
-    {% csrf_token %}
-    <div class="card-body">
-      <div class="row g-3">
-        <div class="col-md-3">
-          <label class="form-label">Desde el día</label>
-          {{ form.dia_inicio }}
-          {% if form.dia_inicio.errors %}<div class="text-danger small">{{ form.dia_inicio.errors }}</div>{% endif %}
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Hasta el día</label>
-          {{ form.dia_fin }}
-          {% if form.dia_fin.errors %}<div class="text-danger small">{{ form.dia_fin.errors }}</div>{% endif %}
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Hora inicio</label>
-          {{ form.hora_inicio }}
-          {% if form.hora_inicio.errors %}<div class="text-danger small">{{ form.hora_inicio.errors }}</div>{% endif %}
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Hora fin</label>
-          {{ form.hora_fin }}
-          {% if form.hora_fin.errors %}<div class="text-danger small">{{ form.hora_fin.errors }}</div>{% endif %}
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Duración (min)</label>
-          {{ form.duracion_minutos }}
-          {% if form.duracion_minutos.errors %}<div class="text-danger small">{{ form.duracion_minutos.errors }}</div>{% endif %}
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Modalidad</label>
-          {{ form.modalidad }}
-          {% if form.modalidad.errors %}<div class="text-danger small">{{ form.modalidad.errors }}</div>{% endif %}
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Ubicación</label>
-          {{ form.ubicacion }}
-          {% if form.ubicacion.errors %}<div class="text-danger small">{{ form.ubicacion.errors }}</div>{% endif %}
+    *{ box-sizing:border-box }
+    html,body{ height:100% }
+    body{
+      margin:0; background:var(--bg-50); color:var(--ink-900);
+      font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+    }
+    a{ color:inherit; text-decoration:none }
+
+    .container{ max-width:1140px; margin:0 auto; padding:24px }
+
+    /* ====== Hero ====== */
+    .hero{
+      background: linear-gradient(135deg,var(--cosam-primary),var(--cosam-accent));
+      color:var(--white); border-radius:20px; padding:28px 24px; display:grid; gap:8px;
+    }
+    .hero .kicker{ opacity:.9; font-weight:600; letter-spacing:.3px; font-size:.95rem }
+    .hero h1{ margin:0; font-size:clamp(1.6rem,2.5vw,2.2rem); line-height:1.15; font-weight:800 }
+    .hero .sub{ margin:0; opacity:.95; font-size:1.05rem }
+
+    /* ====== Grid ====== */
+    .grid{ display:grid; gap:20px; margin-top:22px; grid-template-columns: repeat(12,1fr) }
+    .col-8{ grid-column: span 8 }
+    .col-4{ grid-column: span 4 }
+    @media (max-width: 992px){ .col-8,.col-4{ grid-column: 1 / -1 } }
+
+    /* ====== Card ====== */
+    .card{
+      background:var(--white); border-radius:16px;
+      box-shadow:0 12px 30px rgba(2,8,23,.06), 0 2px 8px rgba(2,8,23,.03);
+      border:1px solid rgba(2,8,23,.06);
+    }
+    .card-h{ padding:18px 18px 0 18px; border-bottom:1px solid rgba(2,8,23,.06) }
+    .card-h h2{ margin:0; font-size:1.1rem; font-weight:700; color:var(--ink-700) }
+    .card-b{ padding:18px }
+    .card-f{
+      padding:16px 18px;
+      border-top:1px solid rgba(2,8,23,.06);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    /* ====== Botones ====== */
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:.9rem 1.1rem;
+      border-radius:12px;
+      font-weight:700;
+      border:2px solid transparent;
+      transition: transform .05s ease, box-shadow .15s ease, filter .15s ease;
+      text-align:center;
+      cursor:pointer;
+      background:transparent;
+    }
+    .btn:active{ transform: translateY(1px) }
+    .btn-primary{
+      background:var(--cosam-primary);
+      color:#fff;
+      box-shadow:0 10px 18px rgba(23,105,170,.25);
+    }
+    .btn-primary:hover{ filter: brightness(.98) }
+    .btn-outline{
+      background:#fff;
+      color:var(--cosam-primary);
+      border-color: rgba(23,105,170,.35);
+    }
+    .btn-outline:hover{
+      background: rgba(23,105,170,.06);
+    }
+
+    /* ====== Formulario ====== */
+    .form-grid{ display:grid; gap:14px; grid-template-columns: repeat(12, 1fr) }
+    .span-3{ grid-column: span 3 } .span-4{ grid-column: span 4 } .span-12{ grid-column: 1 / -1 }
+    @media (max-width: 992px){ .span-3,.span-4{ grid-column: 1 / -1 } }
+
+    .field{ display:flex; flex-direction:column; gap:6px }
+    .label{ font-weight:700; color:var(--ink-700); font-size:.95rem }
+
+    .card-b input[type="text"],
+    .card-b input[type="date"],
+    .card-b input[type="time"],
+    .card-b input[type="number"],
+    .card-b select,
+    .card-b textarea{
+      width:100%; padding:10px 12px; border:1px solid var(--ink-300);
+      border-radius:10px; background:#fff; color:var(--ink-900);
+      outline:none; font-size:1rem; line-height:1.3;
+      transition: box-shadow .15s ease, border-color .15s ease;
+      appearance:none;
+    }
+    .card-b input:focus, .card-b select:focus, .card-b textarea:focus{
+      border-color: var(--cosam-primary);
+      box-shadow: 0 0 0 4px var(--focus);
+    }
+    .hint{ color:var(--ink-500); font-size:.85rem }
+    .error{ color:var(--danger); font-size:.85rem }
+
+    .help-list{ margin:0; padding-left:16px; color:var(--ink-700) }
+    .help-list li{ margin:6px 0 }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- HERO -->
+    <section class="hero" aria-labelledby="hero-title">
+      <span class="kicker">MiHora Lampa · Profesional</span>
+      <h1 id="hero-title">Mi disponibilidad</h1>
+      <p class="sub">Defina rangos de fechas y horarios para que recepción asigne sus citas.</p>
+    </section>
+
+    <!-- CONTENIDO -->
+    <section class="grid" aria-label="Gestión de disponibilidad">
+      <!-- Izquierda: Formulario -->
+      <div class="col-8">
+        <form method="post" class="card" novalidate>
+          {% csrf_token %}
+          <div class="card-h">
+            <h2>Configurar disponibilidad</h2>
+          </div>
+
+          <div class="card-b">
+            <div class="form-grid">
+              <div class="field span-3">
+                <label class="label">Desde el día</label>
+                {{ form.dia_inicio }}
+                {% if form.dia_inicio.errors %}<div class="error">{{ form.dia_inicio.errors }}</div>{% endif %}
+              </div>
+
+              <div class="field span-3">
+                <label class="label">Hasta el día</label>
+                {{ form.dia_fin }}
+                {% if form.dia_fin.errors %}<div class="error">{{ form.dia_fin.errors }}</div>{% endif %}
+              </div>
+
+              <div class="field span-3">
+                <label class="label">Hora inicio</label>
+                {{ form.hora_inicio }}
+                {% if form.hora_inicio.errors %}<div class="error">{{ form.hora_inicio.errors }}</div>{% endif %}
+              </div>
+
+              <div class="field span-3">
+                <label class="label">Hora fin</label>
+                {{ form.hora_fin }}
+                {% if form.hora_fin.errors %}<div class="error">{{ form.hora_fin.errors }}</div>{% endif %}
+              </div>
+
+              <div class="field span-3">
+                <label class="label">Duración (min)</label>
+                {{ form.duracion_minutos }}
+                {% if form.duracion_minutos.errors %}<div class="error">{{ form.duracion_minutos.errors }}</div>{% endif %}
+              </div>
+
+              <div class="field span-3">
+                <label class="label">Modalidad</label>
+                {{ form.modalidad }}
+                {% if form.modalidad.errors %}<div class="error">{{ form.modalidad.errors }}</div>{% endif %}
+              </div>
+
+              <div class="field span-4">
+                <label class="label">Ubicación</label>
+                {{ form.ubicacion }}
+                {% if form.ubicacion.errors %}<div class="error">{{ form.ubicacion.errors }}</div>{% endif %}
+                <div class="hint">Ej.: “Sala 2”, “Box 3” o “Teleconsulta”.</div>
+              </div>
+
+              {% if form.non_field_errors %}
+              <div class="span-12">
+                <div class="error">{{ form.non_field_errors }}</div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Footer con Volver (izquierda) y Guardar (derecha) -->
+          <div class="card-f">
+            <a href="{% url 'profesional_home' %}" class="btn btn-outline">Volver</a>
+            <button type="submit" class="btn btn-primary">Guardar disponibilidad</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Derecha: Guía rápida -->
+      <div class="col-4">
+        <div class="card">
+          <div class="card-h"><h2>Guía rápida</h2></div>
+          <div class="card-b">
+            <ul class="help-list">
+              <li>El rango <strong>Desde/Hasta</strong> define los días en que se generarán bloques.</li>
+              <li><strong>Hora inicio/fin</strong> define la ventana diaria activa.</li>
+              <li><strong>Duración</strong> es el tamaño de cada bloque (p. ej. 30 min).</li>
+              <li><strong>Modalidad</strong> y <strong>Ubicación</strong> se aplican a todos los bloques creados.</li>
+            </ul>
+            <p class="hint" style="margin-top:10px;">Recepción verá estos bloques para agendar pacientes. No se muestran al paciente.</p>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="card-footer d-flex gap-2 justify-content-end">
-      <button class="btn btn-primary" type="submit">Guardar disponibilidad</button>
-    </div>
-  </form>
-</div>
+    </section>
+  </div>
+</body>
+</html>
