@@ -224,6 +224,7 @@ class Cita(models.Model):
     estado = models.ForeignKey(EstadoCita, on_delete=models.PROTECT, related_name="citas")
 
     motivo = models.CharField(max_length=255, blank=True, null=True)
+    nota = models.TextField(blank=True, null=True)
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL, null=True, blank=True,

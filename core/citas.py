@@ -51,3 +51,34 @@ def cambiar_estado(cita_id: int, nuevo_estado: EstadoCita, usuario):
         detalle={"antes": getattr(anterior, "nombre", None), "despues": nuevo_estado.nombre},
     )
     return cita
+
+@transaction.atomic
+def pro_actualizar_cita_estado_y_nota(*, cita_id: int, nuevo_estado: EstadoCita, nota: str, usuario):
+    """
+    Cambia el estado y/o la nota de una cita y registra auditoría.
+    """
+    cita = Cita.objects.select_related("agenda", "agenda__profesional").get(pk=cita_id)
+    cambios = {}
+
+    # estado
+    if cita.estado_id != nuevo_estado.id:
+        anterior = cita.estado.nombre
+        cita.estado = nuevo_estado
+        cambios["estado"] = {"antes": anterior, "despues": nuevo_estado.nombre}
+
+    # nota
+    nota = (nota or "").strip()
+    if (cita.nota or "") != nota:
+        cambios["nota"] = {"antes": cita.nota, "despues": nota}
+        cita.nota = nota
+
+    if cambios:
+        cita.save(update_fields=["estado", "nota", "actualizado_en"])
+        AuditoriaCita.objects.create(
+            cita=cita,
+            usuario=usuario,
+            accion=AuditoriaCita.Accion.ACTUALIZAR,
+            detalle=cambios,
+        )
+
+    return cita

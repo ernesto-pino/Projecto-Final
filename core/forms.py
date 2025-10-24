@@ -492,3 +492,15 @@ class CambiarEstadoCitaForm(forms.Form):
         queryset=EstadoCita.objects.all().order_by("nombre"),
         widget=forms.Select(attrs={"class": "form-select"})
     )
+
+class ProCitaEstadoNotaForm(forms.Form):
+    estado = forms.ModelChoiceField(
+        queryset=EstadoCita.objects.all().order_by("nombre"),
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label="Estado"
+    )
+    nota = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 4, "placeholder": "Comentario interno"}),
+        label="Comentario"
+    )

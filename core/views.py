@@ -4,7 +4,7 @@ from .utils import user_has_role, crear_token_reset, obtener_token_valido, gener
 from .decorators import role_required, paciente_login_required
 from .models import *
 from django.contrib import messages
-from .forms import LoginPacienteForm, CambioPasswordPacienteForm, SolicitarResetForm, ResetPasswordForm, PacienteCreateForm, PacienteEditForm , ProfesionalHorarioForm, AsignarCitaForm, CambiarEstadoCitaForm
+from .forms import LoginPacienteForm, CambioPasswordPacienteForm, ProCitaEstadoNotaForm, SolicitarResetForm, ResetPasswordForm, PacienteCreateForm, PacienteEditForm , ProfesionalHorarioForm, AsignarCitaForm, CambiarEstadoCitaForm
 from django.urls import reverse
 from django.core.cache import cache
 from django.core.mail import send_mail
@@ -12,7 +12,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.db.models.functions import Replace, Upper
 from django.db.models import F, Value, Prefetch
 from django.core.paginator import Paginator
-import re, datetime
+import re
 from django.db import transaction
 from django.utils.dateparse import parse_date
 from core.agendas import (
@@ -20,8 +20,9 @@ from core.agendas import (
     generar_agendas_para_profesional,
     actualizar_disponibilidad_y_regenerar,
 )
-from .citas import asignar_cita, cancelar_cita, cambiar_estado
-from django.core.exceptions import ValidationError
+from .citas import asignar_cita, cancelar_cita, cambiar_estado, pro_actualizar_cita_estado_y_nota
+from django.core.exceptions import ValidationError, PermissionDenied
+from datetime import time, datetime
 
 #renderizado de paginas
 def home(request):
@@ -437,8 +438,8 @@ def recep_agendas_list(request):
 
     fecha = parse_date(fecha_str) if fecha_str else timezone.localdate()
     tz = timezone.get_current_timezone()
-    inicio_dia = timezone.make_aware(datetime.datetime.combine(fecha, datetime.time.min), tz)
-    fin_dia    = timezone.make_aware(datetime.datetime.combine(fecha, datetime.time.max), tz)
+    inicio_dia = timezone.make_aware(datetime.combine(fecha, time.min), tz)
+    fin_dia    = timezone.make_aware(datetime.combine(fecha, time.max), tz)
 
 
     qs = (Agenda.objects
@@ -582,4 +583,76 @@ def recep_cambiar_estado(request, cita_id: int):
         "form": form,
         "cita_id": cita_id,
         "next": request.GET.get("next", ""),
+    })
+
+def _prof_required(user):
+    if not user_has_role(user, "Profesional"):
+        raise PermissionDenied("No eres profesional.")
+
+def _get_prof(user):
+    return get_object_or_404(Profesional, usuario=user, activo=True)
+
+@login_required
+def pro_agendas_list(request):
+    _prof_required(request.user)
+    prof = _get_prof(request.user)
+
+    fecha_str = request.GET.get("fecha")
+    fecha = parse_date(fecha_str) if fecha_str else timezone.localdate()
+
+    tz = timezone.get_current_timezone()
+    inicio_dia = timezone.make_aware(datetime.combine(fecha, time.min), tz)
+    fin_dia    = timezone.make_aware(datetime.combine(fecha, time.max), tz)
+
+    qs = (Agenda.objects
+          .filter(profesional=prof, inicio__gte=inicio_dia, inicio__lte=fin_dia)
+          .select_related("ubicacion")
+          .order_by("inicio"))
+
+    # Trae la cita si existe
+    qs = qs.prefetch_related(Prefetch("cita", queryset=Cita.objects.select_related("paciente", "estado")))
+
+    ctx = {
+        "agendas": qs,
+        "fecha": fecha,
+        "f_fecha": fecha.strftime("%Y-%m-%d"),
+    }
+    return render(request, "admin/profesional/agendas.html", ctx)
+
+@login_required
+def pro_cita_detail(request, cita_id: int):
+    _prof_required(request.user)
+    prof = _get_prof(request.user)
+
+    cita = get_object_or_404(Cita.objects.select_related("agenda", "agenda__profesional", "paciente", "estado"), pk=cita_id)
+    if cita.agenda.profesional_id != prof.id:
+        raise PermissionDenied("No puedes gestionar citas de otros profesionales.")
+
+    if request.method == "POST":
+        form = ProCitaEstadoNotaForm(request.POST)
+        if form.is_valid():
+            try:
+                pro_actualizar_cita_estado_y_nota(
+                    cita_id=cita.id,
+                    nuevo_estado=form.cleaned_data["estado"],
+                    nota=form.cleaned_data.get("nota") or "",
+                    usuario=request.user,
+                )
+                messages.success(request, "Cita actualizada.")
+                # Volver a la misma página (PRG) o a su agenda del día
+                return redirect(reverse("pro_cita_detail", args=[cita.id]))
+            except Exception as e:
+                messages.error(request, f"No se pudo actualizar la cita: {e}")
+    else:
+        form = ProCitaEstadoNotaForm(
+            initial={
+                "estado": cita.estado_id,
+                "nota": cita.nota or "",
+            }
+        )
+
+    return render(request, "admin/profesional/cita_detail.html", {
+        "cita": cita,
+        "form": form,
+        "volver_agenda_url": reverse("pro_agendas_list") + f"?fecha={cita.agenda.inicio.date():%Y-%m-%d}",
     })

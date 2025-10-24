@@ -1,0 +1,45 @@
+<div class="container py-4">
+  <h1 class="h5 mb-3">Cita</h1>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row gy-2">
+        <div class="col-md-6">
+          <strong>Paciente:</strong> {{ cita.paciente.nombre_completo }}<br>
+          <strong>RUT:</strong> {{ cita.paciente.rut }}<br>
+          <strong>Teléfono:</strong> {{ cita.paciente.telefono|default:"—" }}<br>
+          <strong>Email:</strong> {{ cita.paciente.email|default:"—" }}
+        </div>
+        <div class="col-md-6">
+          <strong>Fecha/Hora:</strong> {{ cita.agenda.inicio|date:"d/m/Y H:i" }}–{{ cita.agenda.fin|date:"H:i" }}<br>
+          <strong>Modalidad:</strong> {{ cita.agenda.get_modalidad_display }}<br>
+          <strong>Estado actual:</strong> {{ cita.estado.nombre }}<br>
+          <strong>Motivo:</strong> {{ cita.motivo|default:"—" }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form method="post" class="card shadow-sm">
+    {% csrf_token %}
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label">Nuevo estado</label>
+        {{ form.estado }}
+        {% if form.errors.estado %}<div class="text-danger small">{{ form.errors.estado }}</div>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Comentario</label>
+        {{ form.nota }}
+        {% if form.errors.nota %}<div class="text-danger small">{{ form.errors.nota }}</div>{% endif %}
+      </div>
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+    </div>
+    <div class="card-footer d-flex justify-content-between">
+      <a class="btn btn-outline-secondary" href="{{ volver_agenda_url }}">Volver a mis agendas</a>
+      <button class="btn btn-primary" type="submit">Guardar</button>
+    </div>
+  </form>
+</div>
