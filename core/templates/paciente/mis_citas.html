@@ -1,0 +1,119 @@
+<div class="container py-4">
+  <h1 class="h4 mb-3">Mis citas</h1>
+
+  <!-- PRÓXIMAS -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <strong>Próximas</strong>
+    </div>
+    <div class="card-body p-0">
+      {% if proximas %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Profesional</th>
+                <th>Especialidad</th>
+                <th>Modalidad</th>
+                <th>Ubicación</th>
+                <th>Estado</th>
+                <th>Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in proximas %}
+                <tr>
+                  <td>{{ c.agenda.inicio|date:"d/m/Y" }}</td>
+                  <td>{{ c.agenda.inicio|date:"H:i" }}–{{ c.agenda.fin|date:"H:i" }}</td>
+                  <td>{{ c.agenda.profesional.nombre }} {{ c.agenda.profesional.apellido }}</td>
+                  <td>{{ c.agenda.profesional.especialidad.nombre }}</td>
+                  <td>{{ c.agenda.get_modalidad_display }}</td>
+                  <td>{{ c.agenda.ubicacion.nombre }}</td>
+                  <td><span class="badge bg-primary">{{ c.estado.nombre }}</span></td>
+                  <td>{{ c.motivo|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="p-3 text-muted">No tienes citas próximas.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- HISTORIAL (PAGINADO) -->
+  <div class="card">
+    <div class="card-header">
+      <strong>Historial</strong>
+    </div>
+    <div class="card-body p-0">
+      {% if page_obj.object_list %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Profesional</th>
+                <th>Especialidad</th>
+                <th>Modalidad</th>
+                <th>Ubicación</th>
+                <th>Estado</th>
+                <th>Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in page_obj.object_list %}
+                <tr>
+                  <td>{{ c.agenda.inicio|date:"d/m/Y" }}</td>
+                  <td>{{ c.agenda.inicio|date:"H:i" }}–{{ c.agenda.fin|date:"H:i" }}</td>
+                  <td>{{ c.agenda.profesional.nombre }} {{ c.agenda.profesional.apellido }}</td>
+                  <td>{{ c.agenda.profesional.especialidad.nombre }}</td>
+                  <td>{{ c.agenda.get_modalidad_display }}</td>
+                  <td>{{ c.agenda.ubicacion.nombre }}</td>
+                  <td>
+                    <span class="badge {% if c.estado.nombre == 'Atendida' %}bg-success{% elif c.estado.nombre == 'Ausente' %}bg-warning text-dark{% elif c.estado.nombre == 'Cancelada' %}bg-secondary{% else %}bg-light text-dark{% endif %}">
+                      {{ c.estado.nombre }}
+                    </span>
+                  </td>
+                  <td>{{ c.motivo|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Paginación -->
+        <div class="d-flex justify-content-between align-items-center p-3">
+          <div class="text-muted">
+            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+          </div>
+          <nav>
+            <ul class="pagination mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+              {% endif %}
+              {% for i in page_obj.paginator.page_range %}
+                <li class="page-item {% if i == page_obj.number %}active{% endif %}">
+                  <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                </li>
+              {% endfor %}
+              {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a></li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+      {% else %}
+        <div class="p-3 text-muted">Aún no tienes historial de citas.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>

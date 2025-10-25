@@ -13,6 +13,7 @@ from django.db.models.functions import Replace, Upper
 from django.db.models import F, Value, Prefetch
 from django.core.paginator import Paginator
 import re
+import datetime as dat
 from django.db import transaction
 from django.utils.dateparse import parse_date
 from core.agendas import (
@@ -31,7 +32,7 @@ def home(request):
 @role_required("Recepción")
 def recepcion_home(request):
     hoy = timezone.localdate()
-    ayer = hoy - datetime.timedelta(days=1)
+    ayer = hoy - dat.timedelta(days=1)
 
     # Traer últimos pacientes
     ultimos = list(
@@ -656,3 +657,36 @@ def pro_cita_detail(request, cita_id: int):
         "form": form,
         "volver_agenda_url": reverse("pro_agendas_list") + f"?fecha={cita.agenda.inicio.date():%Y-%m-%d}",
     })
+
+@paciente_login_required
+def paciente_citas(request):
+    # El decorador ya cargó el paciente como request.paciente
+    paciente = request.paciente
+
+    # Trae todas sus citas con joins necesarios (solo lectura)
+    qs = (Cita.objects
+          .filter(paciente=paciente)
+          .select_related(
+              "estado",
+              "agenda",
+              "agenda__profesional",
+              "agenda__profesional__especialidad",
+              "agenda__ubicacion",
+          )
+          .order_by("-agenda__inicio"))
+
+    now = timezone.now()
+
+    # Próximas: desde ahora en adelante (puedes usar inicio >= now)
+    proximas = [c for c in qs if c.agenda.inicio >= now]
+
+    # Pasadas: antes de ahora (paginamos porque pueden ser muchas)
+    pasadas = [c for c in qs if c.agenda.inicio < now]
+    paginator = Paginator(pasadas, 10)  # 10 por página en historial
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    ctx = {
+        "proximas": proximas,
+        "page_obj": page_obj,
+    }
+    return render(request, "paciente/mis_citas.html", ctx)
