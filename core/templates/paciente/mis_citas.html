@@ -1,5 +1,13 @@
+{% extends "core/html/base.html" %}
+
+{% block title %}Mis Citas · MiHora Lampa{% endblock title %}
+
+{% block content %}
 <div class="container py-4">
-  <h1 class="h4 mb-3">Mis citas</h1>
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">Mis citas</h1>
+  </div>
 
   <!-- PRÓXIMAS -->
   <div class="card mb-4">
@@ -31,7 +39,20 @@
                   <td>{{ c.agenda.profesional.especialidad.nombre }}</td>
                   <td>{{ c.agenda.get_modalidad_display }}</td>
                   <td>{{ c.agenda.ubicacion.nombre }}</td>
-                  <td><span class="badge bg-primary">{{ c.estado.nombre }}</span></td>
+                  <td>
+                    {# Mapeo de estados a badges Bootstrap #}
+                    <span class="badge
+                      {% if c.estado.nombre == 'Programada' %} bg-primary
+                      {% elif c.estado.nombre == 'Confirmada' %} bg-info text-dark
+                      {% elif c.estado.nombre == 'Atendida' %} bg-success
+                      {% elif c.estado.nombre == 'Ausente' %} bg-warning text-dark
+                      {% elif c.estado.nombre == 'Cancelada' %} bg-secondary
+                      {% else %} bg-light text-dark
+                      {% endif %}
+                    ">
+                      {{ c.estado.nombre }}
+                    </span>
+                  </td>
                   <td>{{ c.motivo|default:"—" }}</td>
                 </tr>
               {% endfor %}
@@ -75,7 +96,15 @@
                   <td>{{ c.agenda.get_modalidad_display }}</td>
                   <td>{{ c.agenda.ubicacion.nombre }}</td>
                   <td>
-                    <span class="badge {% if c.estado.nombre == 'Atendida' %}bg-success{% elif c.estado.nombre == 'Ausente' %}bg-warning text-dark{% elif c.estado.nombre == 'Cancelada' %}bg-secondary{% else %}bg-light text-dark{% endif %}">
+                    <span class="badge
+                      {% if c.estado.nombre == 'Atendida' %} bg-success
+                      {% elif c.estado.nombre == 'Ausente' %} bg-warning text-dark
+                      {% elif c.estado.nombre == 'Cancelada' %} bg-secondary
+                      {% elif c.estado.nombre == 'Programada' %} bg-primary
+                      {% elif c.estado.nombre == 'Confirmada' %} bg-info text-dark
+                      {% else %} bg-light text-dark
+                      {% endif %}
+                    ">
                       {{ c.estado.nombre }}
                     </span>
                   </td>
@@ -87,24 +116,30 @@
         </div>
 
         <!-- Paginación -->
-        <div class="d-flex justify-content-between align-items-center p-3">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 p-3">
           <div class="text-muted">
             Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
           </div>
           <nav>
             <ul class="pagination mb-0">
               {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                </li>
               {% else %}
                 <li class="page-item disabled"><span class="page-link">Anterior</span></li>
               {% endif %}
+
               {% for i in page_obj.paginator.page_range %}
                 <li class="page-item {% if i == page_obj.number %}active{% endif %}">
                   <a class="page-link" href="?page={{ i }}">{{ i }}</a>
                 </li>
               {% endfor %}
+
               {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a></li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                </li>
               {% else %}
                 <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
               {% endif %}
@@ -116,4 +151,6 @@
       {% endif %}
     </div>
   </div>
+
 </div>
+{% endblock content %}

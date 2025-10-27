@@ -1,35 +1,156 @@
-<div class="container py-4">
-  <h1 class="h5 mb-3">Asignar cita</h1>
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Asignar cita – MiHora Lampa</title>
+    <style>
+      :root {
+        --cosam-primary: #1769aa;
+        --cosam-accent: #2aa86b;
+        --ink-900: #0f172a;
+        --ink-700: #334155;
+        --ink-500: #64748b;
+        --ink-300: #cbd5e1;
+        --bg-50: #f8fafc;
+        --white: #fff;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg-50);
+        color: var(--ink-900);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      }
+      a { text-decoration: none; color: inherit; }
+      .container { max-width: 1140px; margin: 0 auto; padding: 24px; }
 
-  <form method="post" class="card shadow-sm">
-    {% csrf_token %}
-    <input type="hidden" name="next" value="{{ next }}">
-    <div class="card-body">
-      <div class="mb-3">
-        <label class="form-label">RUT del paciente</label>
-        {{ form.rut }}
-        {% if form.errors.rut %}<div class="text-danger small">{{ form.errors.rut }}</div>{% endif %}
-      </div>
+      /* Hero (mismo estilo que Agendas) */
+      .hero {
+        background: linear-gradient(135deg, var(--cosam-primary), var(--cosam-accent));
+        color: #fff;
+        border-radius: 20px;
+        padding: 28px 24px;
+        display: grid;
+        gap: 8px;
+      }
+      .hero .kicker { opacity: .9; font-weight: 600; letter-spacing: .3px; font-size: .95rem; }
+      .hero h1 { margin: 0; font-size: clamp(1.6rem, 2.5vw, 2.2rem); line-height: 1.15; font-weight: 800; }
+      .hero .sub { margin: 0; opacity: .95; font-size: 1.05rem; }
 
-      <div class="mb-3">
-        <label class="form-label">Estado</label>
-        {{ form.estado }}
-        {% if form.errors.estado %}<div class="text-danger small">{{ form.errors.estado }}</div>{% endif %}
-      </div>
+      /* Card */
+      .card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 12px 30px rgba(2, 8, 23, 0.06), 0 2px 8px rgba(2, 8, 23, 0.03);
+        border: 1px solid rgba(2, 8, 23, 0.06);
+      }
+      .card-b { padding: 18px; }
+      .card-footer {
+        padding: 16px 18px;
+        border-top: 1px solid rgba(2, 8, 23, 0.06);
+        display: flex; gap: 12px; justify-content: flex-end;
+      }
 
-      <div class="mb-3">
-        <label class="form-label">Motivo (opcional)</label>
-        {{ form.motivo }}
-        {% if form.errors.motivo %}<div class="text-danger small">{{ form.errors.motivo }}</div>{% endif %}
-      </div>
+      /* Formulario (respetando tu markup) */
+      label { display:block; font-weight:700; color:var(--ink-700); margin-bottom:6px; }
+      .mb-3 { margin-bottom: 1rem; }
 
-      {% if form.non_field_errors %}
-        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-      {% endif %}
+      /* Si tus widgets no traen .form-control/.form-select, los estilizo igual dentro del formulario */
+      .card-b input[type="text"],
+      .card-b input[type="date"],
+      .card-b input[type="time"],
+      .card-b input[type="number"],
+      .card-b select,
+      .card-b textarea,
+      .form-control, .form-select {
+        width: 100%;
+        padding: .6rem .75rem;
+        border-radius: 12px;
+        border: 1px solid var(--ink-300);
+        background: #fff;
+        font: inherit;
+        color: var(--ink-900);
+        outline: none;
+        transition: box-shadow .15s ease, border-color .15s ease;
+      }
+      .card-b input:focus,
+      .card-b select:focus,
+      .card-b textarea:focus {
+        border-color: rgba(23,105,170,.5);
+        box-shadow: 0 0 0 4px rgba(23,105,170,.15);
+      }
+
+      /* Botones (como en Agendas) */
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: .9rem 1.1rem; border-radius: 12px; font-weight: 700; border: 2px solid transparent;
+        transition: transform .05s ease, box-shadow .15s ease; text-align: center; cursor: pointer;
+      }
+      .btn:active { transform: translateY(1px); }
+      .btn-primary { background: var(--cosam-primary); color:#fff; box-shadow: 0 10px 18px rgba(23,105,170,.25); }
+      .btn-primary:hover { filter: brightness(.98); }
+      .btn-outline-secondary {
+        background:#fff; color:#334155; border:2px solid #cbd5e1;
+      }
+
+      /* Errores */
+      .text-danger { color: #dc2626; }
+      .alert { border-radius: 12px; padding: .8rem 1rem; }
+      .alert-danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    </style>
+  </head>
+  <body>
+    {% load humanize tz %}
+    <div class="container">
+      <!-- HERO -->
+      <section class="hero" aria-labelledby="hero-title">
+        <span class="kicker">MiHora Lampa · Recepción</span>
+        <h1 id="hero-title">Asignar cita</h1>
+        <p class="sub">Complete los datos del paciente y confirme la asignación.</p>
+      </section>
+
+      <!-- FORMULARIO (tu mismo markup, solo envuelto en card) -->
+      <section class="card" style="margin-top:20px;">
+        <div class="card-b">
+          <div class="container py-4" style="padding:0;">
+            <h1 class="h5 mb-3">Asignar cita</h1>
+
+            <form method="post" class="card shadow-sm">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ next }}">
+              <div class="card-body" style="padding:18px;">
+                <div class="mb-3">
+                  <label class="form-label">RUT del paciente</label>
+                  {{ form.rut }}
+                  {% if form.errors.rut %}<div class="text-danger small">{{ form.errors.rut }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Estado</label>
+                  {{ form.estado }}
+                  {% if form.errors.estado %}<div class="text-danger small">{{ form.errors.estado }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Motivo (opcional)</label>
+                  {{ form.motivo }}
+                  {% if form.errors.motivo %}<div class="text-danger small">{{ form.errors.motivo }}</div>{% endif %}
+                </div>
+
+                {% if form.non_field_errors %}
+                  <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+              </div>
+              <div class="card-footer d-flex justify-content-end gap-2">
+                <a href="{{ next|default:request.META.HTTP_REFERER|default:'#' }}" class="btn btn-outline-secondary">Cancelar</a>
+                <button class="btn btn-primary" type="submit">Asignar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
     </div>
-    <div class="card-footer d-flex justify-content-end gap-2">
-      <a href="{{ next|default:request.META.HTTP_REFERER|default:'#' }}" class="btn btn-outline-secondary">Cancelar</a>
-      <button class="btn btn-primary" type="submit">Asignar</button>
-    </div>
-  </form>
-</div>
+  </body>
+</html>

@@ -24,6 +24,8 @@ from core.agendas import (
 from .citas import asignar_cita, cancelar_cita, cambiar_estado, pro_actualizar_cita_estado_y_nota
 from django.core.exceptions import ValidationError, PermissionDenied
 from datetime import time, datetime
+from django.utils.http import url_has_allowed_host_and_scheme
+
 
 #renderizado de paginas
 def home(request):
@@ -65,7 +67,90 @@ def recepcion_home(request):
 
 @role_required("Profesional")
 def profesional_home(request):
-    return render(request, "admin/profesional/home.html")
+    _prof_required(request.user)
+    prof = _get_prof(request.user)
+
+    tz   = timezone.get_current_timezone()
+    now  = timezone.now()
+    hoy  = timezone.localdate()
+    ini  = timezone.make_aware(datetime.combine(hoy, time.min), tz)
+    fin  = timezone.make_aware(datetime.combine(hoy, time.max), tz)
+
+    # Bloques de HOY (del profesional)
+    agendas_hoy_qs = Agenda.objects.filter(
+        profesional=prof, inicio__gte=ini, inicio__lte=fin
+    )
+
+    total_hoy   = agendas_hoy_qs.count()
+    ocupados_hoy = Cita.objects.filter(agenda__in=agendas_hoy_qs).count()
+    libres_hoy   = total_hoy - ocupados_hoy
+
+    # Conteos por estado (solo hoy)
+    estado_ids = dict(
+        EstadoCita.objects
+        .filter(nombre__in=["Pendiente", "Ausente"])
+        .values_list("nombre", "id")
+    )
+    pendientes_hoy = Cita.objects.filter(
+        agenda__in=agendas_hoy_qs, estado_id=estado_ids.get("Pendiente", 0)
+    ).count() if estado_ids.get("Pendiente") else 0
+
+    ausentes_hoy = Cita.objects.filter(
+        agenda__in=agendas_hoy_qs, estado_id=estado_ids.get("Ausente", 0)
+    ).count() if estado_ids.get("Ausente") else 0
+
+    # Próximas atenciones (sólo con cita) – próximas 6
+    proximas = list(
+        Cita.objects
+        .select_related("paciente", "estado", "agenda", "agenda__ubicacion")
+        .filter(
+            agenda__profesional=prof,
+            agenda__inicio__gte=ini,   # inicio del día
+            agenda__inicio__lte=fin    # fin del día
+        )
+        .order_by("agenda__inicio")[:6]
+    )
+
+    # Etiqueta tipo "En 2 h", "Mañana", "En 3 d"
+    def eta_label(dt):
+        delta = dt - now
+        mins = int(delta.total_seconds() // 60)
+        if mins >= 0:
+            if mins < 60:
+                return f"En {max(mins,1)} min"
+            horas = mins // 60
+            if dt.date() == hoy:
+                return f"En {horas} h"
+            if dt.date() == hoy + timedelta(days=1):
+                return "Mañana"
+            dias = (dt.date() - hoy).days
+            return f"En {dias} d"
+        else:
+            mins = abs(mins)
+            if mins < 60:
+                return f"Hace {mins} min"
+            horas = mins // 60
+            if dt.date() == hoy:
+                return f"Hace {horas} h"
+            dias = (hoy - dt.date()).days
+            return f"Hace {dias} d"
+
+
+    proximas_items = [{
+        "paciente": c.paciente.nombre_completo(),
+        "sub": f"{c.agenda.inicio:%d/%m %H:%M} — {c.agenda.ubicacion.nombre} · {c.agenda.get_modalidad_display()}",
+        "badge": eta_label(c.agenda.inicio),
+        "url": reverse("pro_cita_detail", args=[c.id]),
+    } for c in proximas]
+
+    ctx = {
+        # saludo ya usa request.user.first_name en tu template
+        "stats_atenciones_hoy": ocupados_hoy,   # para tu caja "Atenciones hoy"
+        "stats_pendientes": pendientes_hoy,     # para tu caja "Pendientes"
+        "stats_ausencias": ausentes_hoy,        # para tu caja "Ausencias"
+        "proximas_items": proximas_items,       # para la lista de la izquierda
+    }
+    return render(request, "admin/profesional/home.html", ctx)
 
 #funciones
 @login_required

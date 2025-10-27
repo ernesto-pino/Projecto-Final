@@ -75,6 +75,12 @@
       .btn:active { transform: translateY(1px); }
       .btn-primary { background: var(--cosam-primary); color:#fff; box-shadow: 0 10px 18px rgba(23,105,170,.25); }
       .btn-primary:hover { filter: brightness(.98); }
+      .btn-outline-secondary {
+        background:#fff; color:#334155; border:2px solid #cbd5e1;
+      }
+      .btn-outline-secondary:hover {
+        background: rgba(23,105,170,.06);
+      }
 
       /* Table */
       .table-responsive { width: 100%; overflow: auto; }
@@ -97,9 +103,6 @@
       .btn-sm { padding: .45rem .7rem; border-radius: 10px; font-weight: 700; }
       .btn-outline-primary {
         background:#fff; color: var(--cosam-primary); border:2px solid rgba(23,105,170,.35);
-      }
-      .btn-outline-secondary {
-        background:#fff; color:#334155; border:2px solid #cbd5e1;
       }
       .btn-outline-danger {
         background:#fff; color:#b91c1c; border:2px solid rgba(185,28,28,.35);
@@ -149,8 +152,10 @@
               </select>
             </div>
 
-            <div class="col-2">
+            <!-- Botones -->
+            <div class="col-2" style="display:flex; gap:8px;">
               <button class="btn btn-primary w-100" type="submit">Filtrar</button>
+              <a href="{% url 'recepcion_home' %}" class="btn btn-outline-secondary w-100">Volver</a>
             </div>
           </form>
         </div>
@@ -186,7 +191,7 @@
                       <td><span class="badge badge-ocupado">Ocupado</span></td>
                       <td>{{ a.cita.paciente.nombre_completo }}</td>
                       <td class="text-right">
-                        <a class="btn btn-sm btn-outline-primary" href="#">Ver</a>
+                        <!--  <a class="btn btn-sm btn-outline-primary" href="#">Ver</a> -->
                         <a class="btn btn-sm btn-outline-secondary"
                            href="{% url 'recep_cambiar_estado' a.cita.id %}{{ next_qs }}">Estado</a>
                         <a class="btn btn-sm btn-outline-danger"

@@ -50,47 +50,60 @@
 
 <div class="container py-5">
   <div class="row g-4 justify-content-center">
-    <!-- Card 1 -->
+
+    <!-- Card 1: Noticias y Actividades -->
     <div class="col-12 col-md-4">
-      <div class="mihora-card text-center">
-        <div class="mihora-card-icon">
-          <i class="bi bi-file-earmark-text-fill"></i>
+      <a href="https://www.instagram.com/cosam_lampa/" target="_blank" rel="noopener noreferrer"
+         class="text-decoration-none text-dark">
+        <div class="mihora-card text-center shadow-sm hover-shadow">
+          <div class="mihora-card-icon">
+            <i class="bi bi-file-earmark-text-fill"></i>
+          </div>
+          <div class="mihora-card-footer">
+            Noticias y Actividades
+          </div>
         </div>
-        <div class="mihora-card-footer">
-          Noticias y Actividades
-        </div>
-      </div>
+      </a>
     </div>
-    <!-- Card 2 -->
+
+    <!-- Card 2: Ver mis citas -->
     <div class="col-12 col-md-4">
-      <div class="mihora-card text-center">
-        <div class="mihora-card-icon">
-          <i class="bi bi-calendar-event-fill"></i>
+      <a href="{% url 'paciente_citas' %}" class="text-decoration-none text-dark">
+        <div class="mihora-card text-center shadow-sm hover-shadow">
+          <div class="mihora-card-icon">
+            <i class="bi bi-calendar-event-fill"></i>
+          </div>
+          <div class="mihora-card-footer">
+            Ver mis citas
+          </div>
         </div>
-        <div class="mihora-card-footer">
-          Ver mis citas
-        </div>
-      </div>
+      </a>
     </div>
-    <!-- Card 3 -->
+
+    <!-- Card 3: Actualizar mis datos -->
     <div class="col-12 col-md-4">
-      <div class="mihora-card text-center">
-        <div class="mihora-card-icon">
-          <i class="bi bi-person-lines-fill"></i>
+      <a href="{% url 'perfil' %}" class="text-decoration-none text-dark">
+        <div class="mihora-card text-center shadow-sm hover-shadow">
+          <div class="mihora-card-icon">
+            <i class="bi bi-person-lines-fill"></i>
+          </div>
+          <div class="mihora-card-footer">
+            Mis datos
+          </div>
         </div>
-        <div class="mihora-card-footer">
-          Actualizar mis datos
-        </div>
-      </div>
+      </a>
     </div>
+
   </div>
 </div>
+
+
 
 <!-- Ideal seria crear un formulario para que el admin cambie los links manualmente  -->
 
 <section class="insta-section py-5">
   <div class="container text-center">
-    <h2 class="section-title">Últimas publicaciones</h2>
+    <h2 class="section-title">Publicaciones Destacadas</h2>
 
     <div class="row g-4 justify-content-center">
       <div class="col-12 col-md-4 d-flex justify-content-center">
