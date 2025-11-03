@@ -66,6 +66,9 @@ urlpatterns = [
     path("paciente/perfil/", views.perfil_paciente, name="perfil"),
     path("cambiar-password/", views.cambiar_password, name="cambiar_password"),
     path("paciente/mis-citas/", views.paciente_citas, name="paciente_citas"),
+    path("paciente/citas/<int:cita_id>/ics/", views.paciente_cita_ics, name="paciente_cita_ics"),
+    path("paciente/citas/<int:cita_id>/gcal/", views.paciente_cita_google, name="paciente_cita_google"),
+
     # Recuperación de contraseña
     path("olvido-clave/", views.solicitar_reset, name="solicitar_reset"),
     path("restablecer/<str:token>/", views.restablecer_password, name="restablecer_password"),

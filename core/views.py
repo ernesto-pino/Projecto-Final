@@ -25,7 +25,10 @@ from .citas import asignar_cita, cancelar_cita, cambiar_estado, pro_actualizar_c
 from django.core.exceptions import ValidationError, PermissionDenied
 from datetime import time, datetime
 from django.utils.http import url_has_allowed_host_and_scheme
-
+from django.http import HttpResponse
+from django.shortcuts import redirect
+from urllib.parse import urlencode, quote
+from django.utils import timezone
 
 #renderizado de paginas
 def home(request):
@@ -745,33 +748,144 @@ def pro_cita_detail(request, cita_id: int):
 
 @paciente_login_required
 def paciente_citas(request):
-    # El decorador ya cargó el paciente como request.paciente
     paciente = request.paciente
-
-    # Trae todas sus citas con joins necesarios (solo lectura)
-    qs = (Cita.objects
-          .filter(paciente=paciente)
-          .select_related(
-              "estado",
-              "agenda",
-              "agenda__profesional",
-              "agenda__profesional__especialidad",
-              "agenda__ubicacion",
-          )
-          .order_by("-agenda__inicio"))
-
     now = timezone.now()
 
-    # Próximas: desde ahora en adelante (puedes usar inicio >= now)
-    proximas = [c for c in qs if c.agenda.inicio >= now]
+    base_qs = (Cita.objects
+        .filter(paciente=paciente)
+        .select_related(
+            "estado",
+            "agenda",
+            "agenda__profesional",
+            "agenda__profesional__especialidad",
+            "agenda__ubicacion",
+        )
+    )
 
-    # Pasadas: antes de ahora (paginamos porque pueden ser muchas)
-    pasadas = [c for c in qs if c.agenda.inicio < now]
-    paginator = Paginator(pasadas, 10)  # 10 por página en historial
+    proximas = base_qs.filter(agenda__inicio__gte=now).order_by("agenda__inicio")
+    pasadas_qs = base_qs.filter(agenda__inicio__lt=now).order_by("-agenda__inicio")
+
+    paginator = Paginator(pasadas_qs, 10)
     page_obj = paginator.get_page(request.GET.get("page"))
 
-    ctx = {
-        "proximas": proximas,
-        "page_obj": page_obj,
-    }
+    ctx = {"proximas": proximas, "page_obj": page_obj}
     return render(request, "paciente/mis_citas.html", ctx)
+
+
+# --- Utilidades internas ---
+
+def _utcstamp(dt):
+    """Retorna dt en UTC con formato iCal YYYYMMDDTHHMMSSZ."""
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+    dt_utc = dt.astimezone(timezone.utc)
+    return dt_utc.strftime("%Y%m%dT%H%M%SZ")
+
+def _cita_title(cita: Cita) -> str:
+    prof = cita.agenda.profesional
+    return f"Cita COSAM Lampa con {prof.nombre} {prof.apellido}".strip()
+
+def _cita_location(cita: Cita) -> str:
+    # Si la modalidad es teleconsulta, puedes personalizar el texto.
+    if cita.agenda.modalidad == Agenda.Modalidad.TELECONSULTA:
+        return "Teleconsulta (COSAM Lampa)"
+    return cita.agenda.ubicacion.nombre or "COSAM Lampa"
+
+def _cita_description(cita: Cita) -> str:
+    paciente = cita.paciente
+    estado   = cita.estado.nombre
+    motivo   = cita.motivo or ""
+    nota     = cita.nota or ""
+    return (
+        f"Paciente: {paciente.nombre_completo()}\n"
+        f"Estado: {estado}\n"
+        f"Motivo: {motivo}\n"
+        f"Nota: {nota}\n"
+        "Generado por MiHora Lampa."
+    ).strip()
+
+def _time_range_from_agenda(cita: Cita):
+    """Usa Agenda.inicio/fin (tu modelo ya los tiene)."""
+    start_dt = cita.agenda.inicio
+    end_dt   = cita.agenda.fin
+    # por si viniera naive
+    if timezone.is_naive(start_dt):
+        start_dt = timezone.make_aware(start_dt, timezone.get_current_timezone())
+    if timezone.is_naive(end_dt):
+        end_dt = timezone.make_aware(end_dt, timezone.get_current_timezone())
+    return start_dt, end_dt
+
+# --- Descarga .ICS ---
+
+@paciente_login_required
+def paciente_cita_ics(request, cita_id: int):
+    # solo el dueño de la cita
+    cita = get_object_or_404(
+        Cita.objects.select_related(
+            "paciente", "estado", "agenda", "agenda__profesional", "agenda__ubicacion"
+        ),
+        pk=cita_id, paciente=request.paciente
+    )
+
+    start_dt, end_dt = _time_range_from_agenda(cita)
+    uid      = f"cita-{cita.id}@mihora-lampa"
+    dtstamp  = _utcstamp(timezone.now())
+    dtstart  = _utcstamp(start_dt)
+    dtend    = _utcstamp(end_dt)
+    summary  = _cita_title(cita)
+    location = _cita_location(cita)
+    desc     = _cita_description(cita).replace("\n", "\\n")
+
+    ics = (
+        "BEGIN:VCALENDAR\r\n"
+        "PRODID:-//MiHora Lampa//ES\r\n"
+        "VERSION:2.0\r\n"
+        "CALSCALE:GREGORIAN\r\n"
+        "METHOD:PUBLISH\r\n"
+        "BEGIN:VEVENT\r\n"
+        f"UID:{uid}\r\n"
+        f"DTSTAMP:{dtstamp}\r\n"
+        f"DTSTART:{dtstart}\r\n"
+        f"DTEND:{dtend}\r\n"
+        f"SUMMARY:{summary}\r\n"
+        f"DESCRIPTION:{desc}\r\n"
+        f"LOCATION:{location}\r\n"
+        "BEGIN:VALARM\r\n"
+        "ACTION:DISPLAY\r\n"
+        "DESCRIPTION:Recordatorio de cita\r\n"
+        "TRIGGER:-PT60M\r\n"
+        "END:VALARM\r\n"
+        "END:VEVENT\r\n"
+        "END:VCALENDAR\r\n"
+    )
+
+    resp = HttpResponse(ics, content_type="text/calendar; charset=utf-8")
+    resp["Content-Disposition"] = f'attachment; filename="cita-{cita.id}.ics"'
+    return resp
+
+# --- Deep link Google Calendar ---
+
+@paciente_login_required
+def paciente_cita_google(request, cita_id: int):
+    cita = get_object_or_404(
+        Cita.objects.select_related(
+            "paciente", "estado", "agenda", "agenda__profesional", "agenda__ubicacion"
+        ),
+        pk=cita_id, paciente=request.paciente
+    )
+    start_dt, end_dt = _time_range_from_agenda(cita)
+
+    params = {
+        "action": "TEMPLATE",
+        "text": _cita_title(cita),
+        "dates": f"{_utcstamp(start_dt)}/{_utcstamp(end_dt)}",
+        "details": _cita_description(cita),
+        "location": _cita_location(cita),
+        "trp": "false",
+    }
+    url = "https://calendar.google.com/calendar/render?" + urlencode(params, quote_via=quote)
+    return redirect(url)
+
+
+
+
