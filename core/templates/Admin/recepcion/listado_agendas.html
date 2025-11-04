@@ -161,6 +161,17 @@
         </div>
       </section>
 
+      {% if messages %}
+      <div class="alerts">
+        {% for m in messages %}
+        <div
+          class="alert {% if 'success' in m.tags %}alert-success{% elif 'error' in m.tags %}alert-error{% endif %}">
+          {{ m }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
       <!-- TABLA -->
       <section class="card" style="margin-top:20px;" aria-label="Listado de agendas">
         <div class="card-b" style="padding:0;">

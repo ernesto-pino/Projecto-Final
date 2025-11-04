@@ -230,6 +230,17 @@
       <p class="sub">Revisa la información del paciente y actualiza el estado de la cita.</p>
     </section>
 
+    {% if messages %}
+    <div class="alerts">
+      {% for m in messages %}
+      <div
+        class="alert {% if 'success' in m.tags %}alert-success{% elif 'error' in m.tags %}alert-error{% endif %}">
+        {{ m }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     <!-- DATOS DE LA CITA -->
     <section style="margin-top:22px">
       <div class="card">

@@ -307,10 +307,11 @@ class PacienteCreateForm(forms.ModelForm):
     def clean_email(self):
         email = (self.cleaned_data.get("email") or "").strip().lower()
         if not email:
-            return ""
-        if Paciente.objects.filter(email=email).exists():
+            return None
+        if Paciente.objects.filter(email__iexact=email).exists():
             raise ValidationError("Este correo ya está registrado.")
         return email
+
 
     def clean_direccion(self):
         d = (self.cleaned_data.get("direccion") or "").strip()

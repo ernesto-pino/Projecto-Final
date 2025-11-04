@@ -415,6 +415,7 @@ def registrar_paciente(request):
 def probar_404(request):
     return render(request, "core/html/404.html", status=404)
 
+@role_required("Recepción")
 def paciente_list(request):
     q = (request.GET.get("q") or "").strip()
     estado = (request.GET.get("estado") or "todos").strip().lower()
@@ -450,11 +451,12 @@ def paciente_list(request):
         "estado": estado,
     })
 
-
+@role_required("Recepción")
 def paciente_detail(request, pk):
     p = get_object_or_404(Paciente, pk=pk)
     return render(request, "admin/recepcion/listado_perfil_paciente.html", {"p": p})
 
+@role_required("Recepción")
 def paciente_edit(request, pk):
     paciente = get_object_or_404(Paciente, pk=pk)
 
@@ -520,6 +522,7 @@ def paciente_edit(request, pk):
 
     return render(request, "admin/recepcion/listado_editar_paciente.html", {"form": form, "paciente": paciente})
 
+@role_required("Recepción")
 def recep_agendas_list(request):
     fecha_str = request.GET.get("fecha")    # yyyy-mm-dd
     prof_id = request.GET.get("prof")       # id profesional
@@ -560,6 +563,7 @@ def recep_agendas_list(request):
     }
     return render(request, "admin/recepcion/listado_agendas.html", ctx)
 
+@role_required("Profesional")
 def pro_setup_horario(request):
     if not user_has_role(request.user, "Profesional"):
         messages.error(request, "No tienes permisos para esta sección.")
@@ -590,7 +594,7 @@ def pro_setup_horario(request):
                 request,
                 f"Disponibilidad actualizada. Se eliminaron bloques libres futuros y se generaron {regenerados} nuevos."
             )
-            return redirect("recep_agendas_list")  # o dashboard del profesional
+            return redirect("pro_agendas_list")  # o dashboard del profesional
         else:
             messages.error(request, "Revisa los errores del formulario.")
     else:
@@ -616,6 +620,7 @@ def _back_to_list(request, default="recep_agendas_list"):
     next_url = request.GET.get("next") or request.POST.get("next")
     return redirect(next_url or reverse(default))
 
+@role_required("Recepción")
 def recep_asignar_cita(request, agenda_id: int):
     # next permite volver al listado con los filtros
     if request.method == "POST":
@@ -641,7 +646,7 @@ def recep_asignar_cita(request, agenda_id: int):
         "next": request.GET.get("next", ""),
     })
 
-
+@role_required("Recepción")
 def recep_cancelar_cita(request, cita_id: int):
     if request.method == "POST":
         try:
@@ -655,7 +660,7 @@ def recep_cancelar_cita(request, cita_id: int):
         "next": request.GET.get("next", ""),
     })
 
-
+@role_required("Recepción")
 def recep_cambiar_estado(request, cita_id: int):
     if request.method == "POST":
         form = CambiarEstadoCitaForm(request.POST)
@@ -681,7 +686,7 @@ def _prof_required(user):
 def _get_prof(user):
     return get_object_or_404(Profesional, usuario=user, activo=True)
 
-@login_required
+@role_required("Profesional")
 def pro_agendas_list(request):
     _prof_required(request.user)
     prof = _get_prof(request.user)
@@ -708,7 +713,7 @@ def pro_agendas_list(request):
     }
     return render(request, "admin/profesional/agendas.html", ctx)
 
-@login_required
+@role_required("Profesional")
 def pro_cita_detail(request, cita_id: int):
     _prof_required(request.user)
     prof = _get_prof(request.user)
