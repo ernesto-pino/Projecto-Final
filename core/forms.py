@@ -445,10 +445,17 @@ class ProfesionalHorarioForm(forms.Form):
 
     def clean(self):
         cleaned = super().clean()
-        hi = cleaned.get("hora_inicio"); hf = cleaned.get("hora_fin")
+        hi = cleaned.get("hora_inicio")
+        hf = cleaned.get("hora_fin")
         if hi and hf and hf <= hi:
             self.add_error("hora_fin", "La hora de fin debe ser posterior a la de inicio.")
+
+        di = cleaned.get("dia_inicio")
+        df = cleaned.get("dia_fin")
+        if di is None or df is None:
+            self.add_error(None, "Selecciona un rango de días válido.")
         return cleaned
+
 
     def dias_en_rango(self):
         a = int(self.cleaned_data["dia_inicio"])

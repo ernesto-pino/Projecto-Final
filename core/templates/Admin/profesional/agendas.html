@@ -441,6 +441,17 @@
       <p class="sub">Revisa tus bloques del día seleccionado. Por defecto se muestra la fecha actual.</p>
     </section>
 
+    {% if messages %}
+    <div class="alerts">
+      {% for m in messages %}
+      <div
+        class="alert {% if 'success' in m.tags %}alert-success{% elif 'error' in m.tags %}alert-error{% endif %}">
+        {{ m }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     <!-- FILTRO FECHA -->
     <section class="grid" aria-label="Filtros">
       <div class="col-12">

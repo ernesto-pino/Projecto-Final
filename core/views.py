@@ -17,7 +17,6 @@ import datetime as dat
 from django.db import transaction
 from django.utils.dateparse import parse_date
 from core.agendas import (
-    crear_plantillas_basicas,
     generar_agendas_para_profesional,
     actualizar_disponibilidad_y_regenerar,
 )
@@ -580,7 +579,7 @@ def pro_setup_horario(request):
         form = ProfesionalHorarioForm(request.POST)
         if form.is_valid():
             dias = form.dias_en_rango()
-            regenerados = actualizar_disponibilidad_y_regenerar(
+            metrics = actualizar_disponibilidad_y_regenerar(
                 prof=prof,
                 dias=dias,
                 hora_inicio=form.cleaned_data["hora_inicio"],
@@ -590,11 +589,16 @@ def pro_setup_horario(request):
                 ubicacion=form.cleaned_data["ubicacion"],
                 weeks_ahead=8,
             )
-            messages.success(
-                request,
-                f"Disponibilidad actualizada. Se eliminaron bloques libres futuros y se generaron {regenerados} nuevos."
+
+            msg = (
+                "Disponibilidad actualizada. "
+                f"Eliminados (libres futuros): {metrics.get('deleted_free', 0)}. "
+                f"Generados: {metrics.get('created', 0)}. "
+                f"Omitidos por pasado: {metrics.get('skipped_past', 0)}. "
+                f"Omitidos por choque con agendas existentes: {metrics.get('skipped_overlap', 0)}."
             )
-            return redirect("pro_agendas_list")  # o dashboard del profesional
+            messages.success(request, msg)
+            return redirect("pro_agendas_list")
         else:
             messages.error(request, "Revisa los errores del formulario.")
     else:
