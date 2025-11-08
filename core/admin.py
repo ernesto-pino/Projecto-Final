@@ -3,7 +3,7 @@ from .models import (
     Role, UserRole,
     Especialidad, Profesional,
     Ubicacion, EstadoCita,
-    Agenda, Paciente, Cita,
+    Agenda, Paciente,
     AuditoriaCita, ContactoCita
 )
 
@@ -16,6 +16,7 @@ from .models import (
 class RoleAdmin(admin.ModelAdmin):
     list_display = ("id", "nombre")
     search_fields = ("nombre",)
+    list_editable = ("nombre",)
 
 
 @admin.register(UserRole)
@@ -23,6 +24,7 @@ class UserRoleAdmin(admin.ModelAdmin):
     list_display = ("id", "usuario", "rol")
     list_filter = ("rol",)
     search_fields = ("usuario__username", "rol__nombre")
+    list_editable = ("rol",)
 
 
 # =========================
@@ -32,7 +34,9 @@ class UserRoleAdmin(admin.ModelAdmin):
 @admin.register(Especialidad)
 class EspecialidadAdmin(admin.ModelAdmin):
     list_display = ("id", "nombre")
+    list_filter = ("nombre",)
     search_fields = ("nombre",)
+    list_editable = ("nombre",)
 
 
 @admin.register(Profesional)
@@ -40,6 +44,7 @@ class ProfesionalAdmin(admin.ModelAdmin):
     list_display = ("id", "nombre", "apellido", "especialidad", "email", "telefono", "activo")
     list_filter = ("activo", "especialidad")
     search_fields = ("nombre", "apellido", "email", "telefono")
+    list_editable = ("nombre", "apellido","especialidad", "email", "telefono", "activo")
 
 
 # =========================
@@ -50,7 +55,7 @@ class ProfesionalAdmin(admin.ModelAdmin):
 class UbicacionAdmin(admin.ModelAdmin):
     list_display = ("id", "nombre")
     search_fields = ("nombre",)
-
+    list_editable = ("nombre",)
 
 # =========================
 #  ESTADOS DE CITA
@@ -59,7 +64,10 @@ class UbicacionAdmin(admin.ModelAdmin):
 @admin.register(EstadoCita)
 class EstadoCitaAdmin(admin.ModelAdmin):
     list_display = ("id", "nombre")
+    list_filter = ("nombre",)
     search_fields = ("nombre",)
+    list_editable = ("nombre",)
+
 
 
 # =========================
@@ -80,21 +88,10 @@ class AgendaAdmin(admin.ModelAdmin):
 
 @admin.register(Paciente)
 class PacienteAdmin(admin.ModelAdmin):
-    list_display = ("id", "rut", "nombres", "apellidos", "email", "telefono")
+    list_display = ("id", "rut", "nombres", "apellidos", "email", "telefono", "is_active")
     search_fields = ("rut", "nombres", "apellidos", "email", "telefono")
-    list_filter = ("apellidos",)
-
-
-# =========================
-#  CITAS
-# =========================
-
-@admin.register(Cita)
-class CitaAdmin(admin.ModelAdmin):
-    list_display = ("id", "paciente", "agenda", "estado", "creado_por", "creado_en")
-    list_filter = ("estado", "agenda__profesional", "agenda__ubicacion")
-    search_fields = ("paciente__nombre", "paciente__apellido", "agenda__profesional__nombre")
-    date_hierarchy = "creado_en"
+    list_filter = ("nombres","apellidos", "is_active")
+    list_editable = ("rut", "nombres", "apellidos", "email", "telefono", "is_active")
 
 
 # =========================

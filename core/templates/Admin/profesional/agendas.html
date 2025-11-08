@@ -321,6 +321,28 @@
       border-radius: 999px
     }
 
+        /* Mensajes (messages) */
+    .alerts {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 12px
+    }
+
+    .alert {
+      padding: 10px 12px;
+      border: 1px solid rgba(2, 8, 23, .12);
+      background: #fff;
+      border-radius: 12px;
+      color: var(--ink-700);
+    }
+
+    .alert-success {
+      background: #dcfce7;
+      border: 1px solid #86efac;
+      color: #166534;
+      font-weight: 600;
+    }    
+
     /* FONDOS / BORDES por estado */
 
     /* ===== ESTILOS DE ESTADOS ===== */
@@ -444,6 +466,7 @@
     {% if messages %}
     <div class="alerts">
       {% for m in messages %}
+      <br>
       <div
         class="alert {% if 'success' in m.tags %}alert-success{% elif 'error' in m.tags %}alert-error{% endif %}">
         {{ m }}

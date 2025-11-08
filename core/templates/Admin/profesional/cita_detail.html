@@ -153,6 +153,28 @@
       background: rgba(23, 105, 170, .06)
     }
 
+        /* Mensajes (messages) */
+    .alerts {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 12px
+    }
+
+    .alert {
+      padding: 10px 12px;
+      border: 1px solid rgba(2, 8, 23, .12);
+      background: #fff;
+      border-radius: 12px;
+      color: var(--ink-700);
+    }
+
+    .alert-success {
+      background: #dcfce7;
+      border: 1px solid #86efac;
+      color: #166534;
+      font-weight: 600;
+    }
+
     /* FORMULARIO */
     label {
       font-weight: 700;
@@ -230,16 +252,8 @@
       <p class="sub">Revisa la información del paciente y actualiza el estado de la cita.</p>
     </section>
 
-    {% if messages %}
-    <div class="alerts">
-      {% for m in messages %}
-      <div
-        class="alert {% if 'success' in m.tags %}alert-success{% elif 'error' in m.tags %}alert-error{% endif %}">
-        {{ m }}
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
+    
+
 
     <!-- DATOS DE LA CITA -->
     <section style="margin-top:22px">
@@ -247,9 +261,9 @@
         <div class="card-h">
           <h2>Detalles de la cita</h2>
         </div>
-        <div class="card-b">
-          <div class="row">
-            <div class="col-6">
+        <div class="card-b">          
+          <div class="row">            
+            <div class="col-6">    
               <p><strong>Paciente:</strong> {{ cita.paciente.nombre_completo }}<br>
                 <strong>RUT:</strong> {{ cita.paciente.rut }}<br>
                 <strong>Teléfono:</strong> {{ cita.paciente.telefono|default:"—" }}<br>
@@ -276,6 +290,16 @@
           <h2>Actualizar estado</h2>
         </div>
         <div class="card-b">
+          {% if messages %}
+            <div class="alerts">
+              {% for m in messages %}
+              <div
+                class="alert {% if 'success' in m.tags %}alert-success{% elif 'error' in m.tags %}alert-error{% endif %}">
+                {{ m }}
+              </div>
+              {% endfor %}
+            </div>
+          {% endif %}
           <div class="field-block">
             <label for="id_estado">Nuevo estado</label>
             {{ form.estado }}
@@ -290,6 +314,7 @@
             <div class="error">{{ form.errors.nota }}</div>
             {% endif %}
           </div>
+          
           {% if form.non_field_errors %}
           <div class="error">{{ form.non_field_errors }}</div>
           {% endif %}
