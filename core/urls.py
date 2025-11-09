@@ -17,6 +17,7 @@ urlpatterns = [
     #funciones de redireccionamiento por rol
     path("entrar/", views.dispatch_por_rol, name="dispatch_por_rol"),
     path("admin/login/", views.admin_login_gate, name="admin_login_gate"),
+    path("acceso-denegado/", views.acceso_denegado, name="acceso_denegado"),
 
     #funciones de recuperación de contraseña
     path("cuenta/clave/recuperar/",auth_views.PasswordResetView.as_view(

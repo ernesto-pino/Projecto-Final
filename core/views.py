@@ -895,6 +895,8 @@ def paciente_cita_google(request, cita_id: int):
     url = "https://calendar.google.com/calendar/render?" + urlencode(params, quote_via=quote)
     return redirect(url)
 
+def acceso_denegado(request):
+    return render(request, "core/html/acceso_denegado.html", status=403)
 
 
 
