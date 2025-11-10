@@ -811,6 +811,13 @@ def _utcstamp(dt):
     dt_utc = dt.astimezone(timezone.utc)
     return dt_utc.strftime("%Y%m%dT%H%M%SZ")
 
+def _gcal_localstamp(dt):
+    """YYYYMMDDTHHMMSS en zona local (sin 'Z'), para usar con ctz=..."""
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+    dt_local = timezone.localtime(dt)  # convierte a TIME_ZONE
+    return dt_local.strftime("%Y%m%dT%H%M%S")
+
 def _cita_title(cita: Cita) -> str:
     prof = cita.agenda.profesional
     return f"Cita COSAM Lampa con {prof.nombre} {prof.apellido}".strip()
@@ -908,10 +915,11 @@ def paciente_cita_google(request, cita_id: int):
     params = {
         "action": "TEMPLATE",
         "text": _cita_title(cita),
-        "dates": f"{_utcstamp(start_dt)}/{_utcstamp(end_dt)}",
+        "dates": f"{_gcal_localstamp(start_dt)}/{_gcal_localstamp(end_dt)}",  # local, sin Z
         "details": _cita_description(cita),
         "location": _cita_location(cita),
         "trp": "false",
+        "ctz": getattr(settings, "TIME_ZONE", "America/Santiago"),            # fuerza TZ
     }
     url = "https://calendar.google.com/calendar/render?" + urlencode(params, quote_via=quote)
     return redirect(url)
