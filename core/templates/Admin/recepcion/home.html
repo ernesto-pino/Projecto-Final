@@ -130,7 +130,7 @@
       <div class="hero-top">
         <div>
           <span class="kicker">MiHora Lampa · Recepción</span>
-          <h1>Hola, {{ request.user.first_name|default:"Recepcionista" }} 👋</h1>
+            <h1 id="hero-title">Hola, {{ nombre_recepcionista|default:"Recepcionista" }} 👋</h1>
           <p class="sub">
             Hoy es {% now "l d \d\e F, Y" %}. Administra pacientes, citas y contactos del COSAM.
           </p>

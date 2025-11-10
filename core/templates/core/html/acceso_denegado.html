@@ -1,42 +1,120 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Acceso denegado – MiHora Lampa</title>
+  <!-- Si tienes un CSS global, descomenta la siguiente línea -->
+  <!-- <link rel="stylesheet" href="{% static 'core/css/base.css' %}"> -->
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #f8fafc;
-      color: #1e293b;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      text-align: center;
+    :root{
+      --brand:#1769aa;
+      --brand-600:#155d96;
+      --bg:#f9fafb;
+      --fg:#0f172a;
+      --muted:#475569;
+      --muted-2:#64748b;
+      --danger:#dc2626;
+      --card:#ffffff;
+      --ring: rgba(23,105,170,.25);
+      --radius:16px;
+      --shadow:0 6px 20px rgba(2,6,23,.08);
     }
-    h1 {
-      font-size: 2rem;
-      color: #dc2626;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      background:var(--bg); color:var(--fg); display:flex; flex-direction:column;
     }
-    p {
-      margin: 8px 0 24px;
-      font-size: 1.1rem;
+    /* Header */
+    header{
+      background:var(--brand); color:#fff; padding:14px 20px;
+      display:flex; align-items:center; justify-content:space-between;
+      box-shadow:0 2px 8px rgba(0,0,0,.08);
     }
-    a {
-      text-decoration: none;
-      background: #1769aa;
-      color: #fff;
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-weight: 600;
+    .app-title{font-weight:700; letter-spacing:.2px; margin:0; font-size:1.05rem}
+    /* Hero */
+    .hero{
+      padding:28px 20px; background:linear-gradient(180deg, #ffffff 0%, #f3f6fb 100%);
+      border-bottom:1px solid #e5e7eb;
     }
-    a:hover { background: #155d96; }
+    .hero .kicker{
+      display:inline-block; font-size:.8rem; color:var(--muted-2); margin-bottom:6px
+    }
+    .hero h1{
+      margin:0; font-size:1.6rem; font-weight:700; letter-spacing:.2px
+    }
+    .hero p.sub{margin:.35rem 0 0; color:var(--muted); font-size:.98rem}
+    /* Main */
+    main{
+      flex:1; display:flex; align-items:center; justify-content:center; padding:28px 16px;
+    }
+    .card{
+      width:100%; max-width:720px; background:var(--card); border-radius:var(--radius);
+      box-shadow:var(--shadow); padding:28px; text-align:center; border:1px solid #eef2f7;
+    }
+    .icon{
+      width:64px; height:64px; margin:0 auto 12px; display:grid; place-items:center;
+      border-radius:18px; background:#fee2e2; color:var(--danger); font-size:32px;
+    }
+    .card h2{margin:.25rem 0 .25rem; font-size:1.4rem; color:var(--danger)}
+    .card p{margin:.25rem 0 1.25rem; color:var(--muted); line-height:1.5}
+    .meta{
+      display:flex; gap:10px; justify-content:center; color:var(--muted-2);
+      font-size:.9rem; margin-bottom:1.25rem;
+    }
+    /* Actions */
+    .actions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+    .btn{
+      appearance:none; border:0; outline:0; cursor:pointer; text-decoration:none;
+      padding:10px 16px; border-radius:12px; font-weight:600; display:inline-flex; align-items:center; gap:8px;
+      transition:transform .02s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .btn:active{transform:translateY(1px)}
+    .btn-primary{background:var(--brand); color:#fff; box-shadow:0 6px 14px var(--ring)}
+    .btn-primary:hover{background:var(--brand-600)}
+    .btn-ghost{background:#fff; color:var(--brand); border:1px solid #dbe3ee}
+    .btn-ghost:hover{background:#f3f6fb}
+    footer{
+      padding:14px 16px; text-align:center; color:var(--muted-2); font-size:.92rem; background:#f3f6fb; border-top:1px solid #e5e7eb;
+    }
+    @media (max-width: 480px){
+      .hero h1{font-size:1.35rem}
+      .card{padding:22px}
+    }
   </style>
 </head>
 <body>
-  <h1>Acceso denegado</h1>
-  <p>No tienes permisos para acceder a esta página.</p>
-  <a href="{% url 'login' %}">Volver al inicio de sesión</a>
+  <header>
+    <h1 class="app-title">MiHora Lampa</h1>
+  </header>
+
+  <section class="hero" aria-labelledby="hero-title">
+    <span class="kicker">Acceso</span>
+    <h1 id="hero-title">Permiso denegado</h1>
+    <p class="sub">No cuentas con los privilegios necesarios para acceder a esta sección.</p>
+  </section>
+
+  <main>
+    <div class="card" role="alert" aria-live="polite">
+      <div class="icon" aria-hidden="true">🚫</div>
+      <h2>Acceso denegado</h2>
+      <p>Tu usuario no posee el rol requerido para esta página.<br>Si crees que se trata de un error, contacta al administrador del sistema.</p>
+
+      <div class="meta">
+        <span>Fecha: {% now "d/m/Y" %}</span>
+        <span>Hora: {% now "H:i" %}</span>
+      </div>
+
+      <div class="actions">
+        <a href="{% url 'login' %}" class="btn btn-primary">Ir al inicio</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    © {% now "Y" %} MiHora Lampa · COSAM Lampa
+  </footer>
 </body>
 </html>

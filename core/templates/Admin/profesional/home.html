@@ -124,7 +124,7 @@
         <div class="hero-top">
           <div>
             <span class="kicker">MiHora Lampa · Profesional</span>
-            <h1 id="hero-title">Hola, {{ request.user.first_name|default:"Profesional" }} 👋</h1>
+            <h1 id="hero-title">Hola, {{ nombre_completo|default:"Profesional" }} 👋</h1>
             <p class="sub">Hoy es {% now "l d \d\e F, Y" %}. Revise su agenda y gestione a sus pacientes.</p>
           </div>
           <form method="post" action="{% url 'logout' %}">

@@ -62,9 +62,21 @@ def recepcion_home(request):
         "llamadas_hoy": 0
     }
 
+    # Nombre y apellido del recepcionista (desde AUTH_USER_MODEL)
+    nombre = (request.user.first_name or "").strip()
+    apellido = (request.user.last_name or "").strip()
+    nombre_recepcionista = (f"{nombre} {apellido}").strip() or request.user.get_username()
+    
+
+    # Nombre de la base de datos activa (sin usar `connection`)
+    db_alias = Paciente.objects.db
+    nombre_bd = settings.DATABASES.get(db_alias, {}).get("NAME", db_alias)
+
     return render(request, "admin/recepcion/home.html", {
         "ultimos_pacientes": ultimos,
-        "stats": stats
+        "stats": stats,
+        "nombre_bd": nombre_bd,
+        "nombre_recepcionista": nombre_recepcionista,
     })
 
 @role_required("Profesional")
@@ -145,8 +157,17 @@ def profesional_home(request):
         "url": reverse("pro_cita_detail", args=[c.id]),
     } for c in proximas]
 
+    # Nombre y apellido del profesional (campos de tu modelo)
+    nombre_completo = f"{prof.nombre} {prof.apellido}".strip()
+
+    # Alias de BD usado por el queryset y nombre de BD desde settings (sin connection)
+    db_alias = Agenda.objects.db
+    nombre_bd = settings.DATABASES.get(db_alias, {}).get("NAME", db_alias)
+    
     ctx = {
         # saludo ya usa request.user.first_name en tu template
+        "nombre_completo": nombre_completo,
+        "nombre_bd": nombre_bd,        
         "stats_atenciones_hoy": ocupados_hoy,   # para tu caja "Atenciones hoy"
         "stats_pendientes": pendientes_hoy,     # para tu caja "Pendientes"
         "stats_ausencias": ausentes_hoy,        # para tu caja "Ausencias"
