@@ -1,0 +1,34 @@
+# Entornos y configuraciones
+.env
+*.env
+__pycache__/
+*.py[cod]
+*.sqlite3
+db.sqlite3
+
+# Archivos temporales / logs
+*.log
+*.pot
+*.py~
+*.swp
+
+# Archivos del IDE / Editor
+.vscode/
+.idea/
+*.iml
+
+# Archivos de compilación o cache
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos generados por Django
+/media/
+staticfiles/
+sent_emails/
