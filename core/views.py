@@ -84,22 +84,26 @@ def profesional_home(request):
     _prof_required(request.user)
     prof = _get_prof(request.user)
 
-    tz   = timezone.get_current_timezone()
-    now  = timezone.now()
-    hoy  = timezone.localdate()
-    ini  = timezone.make_aware(datetime.combine(hoy, time.min), tz)
-    fin  = timezone.make_aware(datetime.combine(hoy, time.max), tz)
+    tz = timezone.get_current_timezone()
 
-    # Bloques de HOY (del profesional)
+    # "now" y "hoy" en zona local
+    now_utc = timezone.now()
+    now = timezone.localtime(now_utc, tz)
+    hoy = now.date()
+
+    # Rango del día en zona local (aware)
+    ini_local = datetime.combine(hoy, time.min).replace(tzinfo=tz)
+    fin_local = datetime.combine(hoy, time.max).replace(tzinfo=tz)
+
+    # Filtro: Django convierte correctamente al comparar con campos UTC
     agendas_hoy_qs = Agenda.objects.filter(
-        profesional=prof, inicio__gte=ini, inicio__lte=fin
+        profesional=prof, inicio__gte=ini_local, inicio__lte=fin_local
     )
 
-    total_hoy   = agendas_hoy_qs.count()
+    total_hoy    = agendas_hoy_qs.count()
     ocupados_hoy = Cita.objects.filter(agenda__in=agendas_hoy_qs).count()
     libres_hoy   = total_hoy - ocupados_hoy
 
-    # Conteos por estado (solo hoy)
     estado_ids = dict(
         EstadoCita.objects
         .filter(nombre__in=["Pendiente", "Ausente"])
@@ -113,29 +117,19 @@ def profesional_home(request):
         agenda__in=agendas_hoy_qs, estado_id=estado_ids.get("Ausente", 0)
     ).count() if estado_ids.get("Ausente") else 0
 
-    # Próximas atenciones (sólo con cita) – próximas 6
-    proximas = list(
-        Cita.objects
-        .select_related("paciente", "estado", "agenda", "agenda__ubicacion")
-        .filter(
-            agenda__profesional=prof,
-            agenda__inicio__gte=ini,   # inicio del día
-            agenda__inicio__lte=fin    # fin del día
-        )
-        .order_by("agenda__inicio")[:6]
-    )
-
-    # Etiqueta tipo "En 2 h", "Mañana", "En 3 d"
-    def eta_label(dt):
+    def eta_label(dt_aware):
+        # Convertir SIEMPRE a local antes de calcular
+        dt = timezone.localtime(dt_aware, tz)
         delta = dt - now
         mins = int(delta.total_seconds() // 60)
+
         if mins >= 0:
             if mins < 60:
-                return f"En {max(mins,1)} min"
+                return f"En {max(mins, 1)} min"
             horas = mins // 60
             if dt.date() == hoy:
                 return f"En {horas} h"
-            if dt.date() == hoy + timedelta(days=1):
+            if dt.date() == (hoy + timedelta(days=1)):
                 return "Mañana"
             dias = (dt.date() - hoy).days
             return f"En {dias} d"
@@ -149,29 +143,40 @@ def profesional_home(request):
             dias = (hoy - dt.date()).days
             return f"Hace {dias} d"
 
+    # Próximas atenciones (solo hoy) – próximas 6
+    proximas = list(
+        Cita.objects
+        .select_related("paciente", "estado", "agenda", "agenda__ubicacion")
+        .filter(
+            agenda__profesional=prof,
+            agenda__inicio__gte=ini_local,
+            agenda__inicio__lte=fin_local
+        )
+        .order_by("agenda__inicio")[:6]
+    )
 
-    proximas_items = [{
-        "paciente": c.paciente.nombre_completo(),
-        "sub": f"{c.agenda.inicio:%d/%m %H:%M} — {c.agenda.ubicacion.nombre} · {c.agenda.get_modalidad_display()}",
-        "badge": eta_label(c.agenda.inicio),
-        "url": reverse("pro_cita_detail", args=[c.id]),
-    } for c in proximas]
+    proximas_items = []
+    for c in proximas:
+        inicio_local = timezone.localtime(c.agenda.inicio, tz)
+        proximas_items.append({
+            "paciente": c.paciente.nombre_completo(),
+            "sub": f"{inicio_local:%d/%m %H:%M} — {c.agenda.ubicacion.nombre} · {c.agenda.get_modalidad_display()}",
+            "badge": eta_label(c.agenda.inicio),  # eta_label ya localiza dentro
+            "url": reverse("pro_cita_detail", args=[c.id]),
+        })
 
-    # Nombre y apellido del profesional (campos de tu modelo)
     nombre_completo = f"{prof.nombre} {prof.apellido}".strip()
 
-    # Alias de BD usado por el queryset y nombre de BD desde settings (sin connection)
     db_alias = Agenda.objects.db
     nombre_bd = settings.DATABASES.get(db_alias, {}).get("NAME", db_alias)
-    
+
     ctx = {
-        # saludo ya usa request.user.first_name en tu template
         "nombre_completo": nombre_completo,
-        "nombre_bd": nombre_bd,        
-        "stats_atenciones_hoy": ocupados_hoy,   # para tu caja "Atenciones hoy"
-        "stats_pendientes": pendientes_hoy,     # para tu caja "Pendientes"
-        "stats_ausencias": ausentes_hoy,        # para tu caja "Ausencias"
-        "proximas_items": proximas_items,       # para la lista de la izquierda
+        "nombre_bd": nombre_bd,
+        "stats_atenciones_hoy": ocupados_hoy,
+        "stats_pendientes": pendientes_hoy,
+        "stats_ausencias": ausentes_hoy,
+        "proximas_items": proximas_items,
     }
     return render(request, "admin/profesional/home.html", ctx)
 
