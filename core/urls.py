@@ -76,6 +76,9 @@ urlpatterns = [
 
     #panel admin
     path('admin/', admin.site.urls),
+    path("panel/admin/kpis/", views.recep_kpis, name="recep_kpis"),
+    path("panel/admin/kpis/data/", views.recep_kpis_data, name="recep_kpis_data"),
+
 
     #error 404 solo pacientes
     path("404/", views.probar_404, name="404"),

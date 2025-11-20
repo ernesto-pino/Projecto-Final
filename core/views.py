@@ -28,6 +28,9 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from urllib.parse import urlencode, quote
 from django.utils import timezone
+from django.http import JsonResponse
+from django.db.models.functions import TruncWeek
+from django.db.models import Count
 
 #renderizado de paginas
 def home(request):
@@ -933,4 +936,118 @@ def acceso_denegado(request):
     return render(request, "core/html/acceso_denegado.html", status=403)
 
 
+@role_required("Administrador")
+def recep_kpis(request):
+    """
+    Renderiza el dashboard. El JS interno llama a /kpis/data/ para traer las métricas.
+    """
+    profesionales = Profesional.objects.filter(activo=True).order_by("apellido", "nombre")
+    hoy = timezone.localdate()
+    # Rango por defecto: últimas 8 semanas
+    default_desde = (hoy - timezone.timedelta(weeks=8)).isoformat()
+    default_hasta = hoy.isoformat()
 
+    return render(request, "admin/kpis.html", {
+        "profesionales": profesionales,
+        "default_desde": default_desde,
+        "default_hasta": default_hasta,
+    })
+
+@role_required("Administrador")
+def recep_kpis_data(request):
+    """
+    Devuelve JSON con KPIs por rango y (opcional) por profesional.
+    - Parámetros GET:
+        desde=YYYY-MM-DD
+        hasta=YYYY-MM-DD
+        prof=<id> (opcional)
+    - Métricas:
+        * series semanales por estado (line chart)
+        * distribución por estado (doughnut)
+        * tarjetas: total, atendidas, ausentes, canceladas, confirmadas, tasa_asistencia, tasa_ausentismo
+    """
+    hoy = timezone.localdate()
+    desde = parse_date(request.GET.get("desde") or "") or (hoy - timezone.timedelta(weeks=8))
+    hasta = parse_date(request.GET.get("hasta") or "") or hoy
+    prof_id = request.GET.get("prof")
+
+    # Nos basamos en la fecha de la atención (agenda.inicio), no la fecha de creación de la cita.
+    base = (Cita.objects
+            .select_related("estado", "agenda", "agenda__profesional")
+            .filter(agenda__inicio__date__gte=desde, agenda__inicio__date__lte=hasta))
+
+    if prof_id:
+        try:
+            prof_id = int(prof_id)
+            base = base.filter(agenda__profesional_id=prof_id)
+        except ValueError:
+            pass
+
+    # Normalizamos algunos nombres esperados (ajusta si tus estados se llaman distinto)
+    EST_NOMBRES = {
+        "ATENDIDA": "Atendida",
+        "AUSENTE": "Ausente",
+        "CANCELADA": "Cancelada",
+        "CONFIRMADA": "Confirmada",
+        "PENDIENTE": "Pendiente",
+    }
+    # Set de todos los estados que aparecerán como series
+    estados_obj = EstadoCita.objects.all().values_list("nombre", flat=True)
+    estados_sistema = list(estados_obj)  # p.ej. ["Pendiente","Confirmada","Atendida","Ausente","Cancelada"]
+
+    # ------- Series semanales por estado -------
+    tz = timezone.get_current_timezone()
+    semanal = (base
+               .annotate(semana=TruncWeek("agenda__inicio", tzinfo=tz))
+               .values("semana", "estado__nombre")
+               .annotate(c=Count("id"))
+               .order_by("semana"))
+
+    # Construimos ejes
+    semanas = sorted({row["semana"].date().isoformat() for row in semanal})
+    series = {estado: [0] * len(semanas) for estado in estados_sistema}
+    idx = {sem: i for i, sem in enumerate(semanas)}
+    for row in semanal:
+        s = row["semana"].date().isoformat()
+        e = row["estado__nombre"]
+        if e in series:
+            series[e][idx[s]] = row["c"]
+
+    # ------- Totales por estado (distribución) -------
+    dist = (base
+            .values("estado__nombre")
+            .annotate(c=Count("id"))
+            .order_by())
+
+    distrib = {e: 0 for e in estados_sistema}
+    for row in dist:
+        distrib[row["estado__nombre"]] = row["c"]
+
+    total = sum(distrib.values())
+    atendidas = distrib.get("Atendida", 0)
+    ausentes = distrib.get("Ausente", 0)
+    canceladas = distrib.get("Cancelada", 0)
+    confirmadas = distrib.get("Confirmada", 0)
+    pendientes = distrib.get("Pendiente", 0)
+
+    # Tasa de asistencia/ausentismo (sobre atendidas + ausentes, evitando div/0)
+    base_asistencia = max(atendidas + ausentes, 1)
+    tasa_asistencia = round(100 * atendidas / base_asistencia, 1)
+    tasa_ausentismo = round(100 * ausentes / base_asistencia, 1)
+
+    return JsonResponse({
+        "rango": {"desde": desde.isoformat(), "hasta": hasta.isoformat(), "prof": prof_id},
+        "labels_semanas": semanas,
+        "series": series,                # { "Atendida":[..], "Ausente":[..], ... }
+        "distribucion": distrib,         # { "Atendida":N, "Ausente":N, ... }
+        "kpis": {
+            "total": total,
+            "atendidas": atendidas,
+            "ausentes": ausentes,
+            "canceladas": canceladas,
+            "confirmadas": confirmadas,
+            "pendientes": pendientes,
+            "tasa_asistencia": tasa_asistencia,
+            "tasa_ausentismo": tasa_ausentismo,
+        },
+    })
