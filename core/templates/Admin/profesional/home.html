@@ -1,9 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Panel Profesional – MiHora Lampa</title>
+      <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'core/img/logo_lampa.png' %}">
     <style>
       :root {
         --cosam-primary: #1769aa;
@@ -184,7 +187,7 @@
             <div class="card-b">
               <div class="stats" aria-label="Indicadores del día">
                 <div class="stat">
-                  <p class="k">Atenciones hoy</p>
+                  <p class="k">Citas hoy</p>
                   <p class="v">{{ stats_atenciones_hoy }}</p>
                 </div>
                 <div class="stat">

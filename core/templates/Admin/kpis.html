@@ -3,83 +3,412 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>KPIs de Citas – MiHora Lampa</title>
+  <title>Dashboard de Gestión Asistencial – MiHora Lampa</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      /* Colores alineados con el panel de recepción */
+      --mhl-primary: #005A9C;      /* azul MiHora */
+      --mhl-secondary: #1BBF88;    /* verde MiHora */
+      --mhl-primary-soft: #e0edff;
+      --mhl-accent: #10b981;
+      --mhl-danger-soft: #fee2e2;
+      --mhl-warning-soft: #fef3c7;
+      --mhl-muted: #64748b;
+      --mhl-radius: 1.5rem;
+    }
+
+    body {
+      background: #f3f4f6;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .container {
+      max-width: 1200px;
+    }
+
+    /* Header tipo recepción */
+    .mhl-page-header {
+      background: linear-gradient(120deg, var(--mhl-primary), var(--mhl-secondary));
+      color: #fff;
+      border-radius: 1.75rem;
+      padding: 1.75rem 2rem;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.35);
+      margin-bottom: 2rem;
+    }
+
+    .mhl-page-header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .mhl-page-header small {
+      color: rgba(255,255,255,0.9);
+    }
+
+    .mhl-page-header .mhl-breadcrumb {
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-size: .72rem;
+      font-weight: 600;
+      opacity: .9;
+      margin-bottom: .25rem;
+    }
+
+    .mhl-page-header .btn-outline-light {
+      border-radius: 999px;
+      padding-inline: 1.3rem;
+      font-weight: 500;
+    }
+
+    .mhl-page-header .badge {
+      background: rgba(15, 23, 42, .12);
+      border-radius: 999px;
+      font-weight: 500;
+      padding: .35rem .75rem;
+      font-size: .75rem;
+    }
+
+    /* Botones principales estilo MiHora */
+    .btn-primary {
+      background: var(--mhl-primary);
+      border-color: var(--mhl-primary);
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      background: #004476;
+      border-color: #004476;
+    }
+
+    /* Card “flotante” */
+    .mhl-card {
+      border: none;
+      border-radius: var(--mhl-radius);
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+      background: #fff;
+    }
+
+    .mhl-card-header {
+      border-bottom: 1px solid #e5e7eb;
+      background: #ffffff;
+      border-radius: var(--mhl-radius) var(--mhl-radius) 0 0 !important;
+      padding: .9rem 1.3rem;
+      font-weight: 600;
+      font-size: .95rem;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+    }
+
+    .mhl-card-header i {
+      font-size: 1.1rem;
+      color: var(--mhl-primary);
+    }
+
+    .mhl-card .card-body {
+      padding: 1.2rem 1.4rem 1.4rem;
+    }
+
+    /* Filtros */
+    .mhl-filter-card label {
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--mhl-muted);
+      margin-bottom: .25rem;
+      font-weight: 600;
+    }
+
+    .mhl-filter-card .form-control,
+    .mhl-filter-card .form-select {
+      border-radius: .9rem;
+      font-size: .85rem;
+    }
+
+    /* KPI cards */
+    .mhl-kpi-card {
+      border-radius: 1.25rem;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+      transition: transform .12s ease-out, box-shadow .12s ease-out, border-color .12s;
+      position: relative;
+      overflow: hidden;
+      padding: .85rem 1rem;
+    }
+
+    .mhl-kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.10);
+      border-color: rgba(0, 90, 156, 0.35);
+    }
+
+    .mhl-kpi-title {
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--mhl-muted);
+      margin-bottom: .15rem;
+      font-weight: 600;
+    }
+
+    .mhl-kpi-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    .mhl-kpi-icon {
+      position: absolute;
+      right: .85rem;
+      top: .75rem;
+      font-size: 1.25rem;
+      opacity: .24;
+    }
+
+    .mhl-kpi-pill {
+      font-size: .7rem;
+      padding: .15rem .45rem;
+      border-radius: 999px;
+      background: #ecfdf3;
+      color: #166534;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: .2rem;
+      margin-top: .2rem;
+    }
+
+    .mhl-kpi-pill i {
+      font-size: .8rem;
+    }
+
+    .mhl-kpi-card.kpi-ausentes {
+      background: linear-gradient(145deg, #fff, var(--mhl-danger-soft));
+    }
+
+    .mhl-kpi-card.kpi-canceladas {
+      background: linear-gradient(145deg, #fff, #fffbeb);
+    }
+
+    .mhl-kpi-card.kpi-asistencia {
+      background: linear-gradient(145deg, #f0fdf4, #ecfdf3);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    /* NUEVO: estilo diferenciado para Confirmadas (azul) */
+    .mhl-kpi-card.kpi-confirmadas-azul {
+      background: linear-gradient(145deg, #fff, #dbeafe); /* azul suave */
+      border-color: rgba(59, 130, 246, 0.35);
+    }
+
+    /* Charts */
+    .chart-container {
+      position: relative;
+      width: 100%;
+      min-height: 280px;
+    }
+
+    .text-xs {
+      font-size: .78rem;
+    }
+  </style>
 </head>
-<body class="bg-light">
+<body>
 <div class="container py-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">KPIs de Citas</h1>
-    <a class="btn btn-outline-secondary btn-sm" href="{% url 'recepcion_home' %}">Volver</a>
+
+  <!-- Encabezado página estilo recepción -->
+  <div class="mhl-page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <div class="mhl-breadcrumb">MiHora Lampa · Recepción</div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <i class="bi bi-activity fs-4"></i>
+        <h1 class="mb-0">Dashboard de Gestión Asistencial</h1>
+      </div>
+      <small>Monitorea asistencia, ausentismo y cancelaciones de las citas del COSAM.</small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge">
+        <i class="bi bi-calendar-week me-1"></i>
+        Rango: <span id="badge-rango">{{ default_desde }} – {{ default_hasta }}</span>
+      </span>
+      <a class="btn btn-outline-light btn-sm" href="{% url 'recepcion_home' %}">
+        <i class="bi bi-arrow-left-short me-1"></i> Volver a recepción
+      </a>
+    </div>
   </div>
 
   <!-- Filtros -->
-  <form id="filtros" class="row g-2 mb-3">
-    <div class="col-sm-3">
-      <label class="form-label">Desde</label>
-      <input type="date" class="form-control" name="desde" value="{{ default_desde }}">
+  <div class="card mhl-card mhl-filter-card mb-3">
+    <div class="mhl-card-header">
+      <i class="bi bi-funnel"></i>
+      <span>Filtros de búsqueda</span>
     </div>
-    <div class="col-sm-3">
-      <label class="form-label">Hasta</label>
-      <input type="date" class="form-control" name="hasta" value="{{ default_hasta }}">
+    <div class="card-body">
+      <form id="filtros" class="row g-3">
+        <div class="col-sm-3">
+          <label class="form-label">Desde</label>
+          <input type="date" class="form-control form-control-sm" name="desde" value="{{ default_desde }}">
+        </div>
+        <div class="col-sm-3">
+          <label class="form-label">Hasta</label>
+          <input type="date" class="form-control form-control-sm" name="hasta" value="{{ default_hasta }}">
+        </div>
+        <div class="col-sm-4">
+          <label class="form-label">Profesional</label>
+          <select class="form-select form-select-sm" name="prof">
+            <option value="">Todos</option>
+            {% for pr in profesionales %}
+              <option value="{{ pr.id }}">{{ pr.apellido }}, {{ pr.nombre }} – {{ pr.especialidad.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-2 d-flex align-items-end">
+          <button class="btn btn-primary btn-sm w-100" type="submit">
+            <i class="bi bi-arrow-repeat me-1"></i> Aplicar
+          </button>
+        </div>
+      </form>
     </div>
-    <div class="col-sm-4">
-      <label class="form-label">Profesional</label>
-      <select class="form-select" name="prof">
-        <option value="">Todos</option>
-        {% for pr in profesionales %}
-          <option value="{{ pr.id }}">{{ pr.apellido }}, {{ pr.nombre }} – {{ pr.especialidad.nombre }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-sm-2 d-flex align-items-end">
-      <button class="btn btn-primary w-100" type="submit">Aplicar</button>
-    </div>
-  </form>
+  </div>
 
   <!-- KPI Cards -->
   <div class="row g-3 mb-3" id="kpi-cards">
-    <div class="col-md-2"><div class="card text-center"><div class="card-body"><div class="text-muted">Total</div><div class="fs-4 fw-bold" id="kpi-total">—</div></div></div></div>
-    <div class="col-md-2"><div class="card text-center"><div class="card-body"><div class="text-muted">Atendidas</div><div class="fs-4 fw-bold" id="kpi-atendidas">—</div></div></div></div>
-    <div class="col-md-2"><div class="card text-center"><div class="card-body"><div class="text-muted">Ausentes</div><div class="fs-4 fw-bold" id="kpi-ausentes">—</div></div></div></div>
-    <div class="col-md-2"><div class="card text-center"><div class="card-body"><div class="text-muted">Canceladas</div><div class="fs-4 fw-bold" id="kpi-canceladas">—</div></div></div></div>
-    <div class="col-md-2"><div class="card text-center"><div class="card-body"><div class="text-muted">Confirmadas</div><div class="fs-4 fw-bold" id="kpi-confirmadas">—</div></div></div></div>
-    <div class="col-md-2"><div class="card text-center"><div class="card-body"><div class="text-muted">Asistencia</div><div class="fs-4 fw-bold" id="kpi-asistencia">—%</div></div></div></div>
+    <div class="col-6 col-md-2">
+      <div class="mhl-kpi-card h-100 position-relative">
+        <div class="mhl-kpi-title">Total</div>
+        <div class="mhl-kpi-value" id="kpi-total">—</div>
+        <div class="text-xs text-muted">Citas registradas en el período.</div>
+        <i class="bi bi-clipboard2-data mhl-kpi-icon"></i>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-2">
+      <div class="mhl-kpi-card h-100 position-relative">
+        <div class="mhl-kpi-title">Atendidas</div>
+        <div class="mhl-kpi-value" id="kpi-atendidas">—</div>
+        <span class="mhl-kpi-pill">
+          <i class="bi bi-check2-circle"></i>
+          Atenciones efectivas
+        </span>
+        <i class="bi bi-person-check mhl-kpi-icon" style="color:#16a34a;opacity:.35;"></i>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-2">
+      <div class="mhl-kpi-card h-100 position-relative kpi-ausentes">
+        <div class="mhl-kpi-title">Ausentes</div>
+        <div class="mhl-kpi-value" id="kpi-ausentes">—</div>
+        <div class="text-xs text-muted">Pacientes que no asistieron.</div>
+        <i class="bi bi-person-x mhl-kpi-icon" style="color:#dc2626;opacity:.45;"></i>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-2">
+      <div class="mhl-kpi-card h-100 position-relative kpi-canceladas">
+        <div class="mhl-kpi-title">Canceladas</div>
+        <div class="mhl-kpi-value" id="kpi-canceladas">—</div>
+        <div class="text-xs text-muted">Canceladas por paciente o centro.</div>
+        <i class="bi bi-x-circle mhl-kpi-icon" style="color:#eab308;opacity:.45;"></i>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-2">
+      <div class="mhl-kpi-card h-100 position-relative kpi-confirmadas-azul">
+        <div class="mhl-kpi-title">Confirmadas</div>
+        <div class="mhl-kpi-value" id="kpi-confirmadas">—</div>
+        <div class="text-xs text-muted">Citas confirmadas previamente.</div>
+        <i class="bi bi-bell-fill mhl-kpi-icon" style="color:#3b82f6;opacity:.45;"></i>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-2">
+      <div class="mhl-kpi-card h-100 position-relative kpi-asistencia">
+        <div class="mhl-kpi-title">Asistencia</div>
+        <div class="mhl-kpi-value" id="kpi-asistencia">—%</div>
+        <div class="text-xs text-muted">Tasa de asistencia del período.</div>
+        <i class="bi bi-graph-up-arrow mhl-kpi-icon" style="color:#16a34a;opacity:.45;"></i>
+      </div>
+    </div>
   </div>
 
+  <!-- Gráficos -->
   <div class="row g-3">
     <div class="col-lg-8">
-      <div class="card">
-        <div class="card-header">Series semanales por estado</div>
+      <div class="card mhl-card h-100">
+        <div class="mhl-card-header">
+          <i class="bi bi-graph-up"></i>
+          <span>Series semanales por estado</span>
+        </div>
         <div class="card-body">
-          <canvas id="chLine" height="120"></canvas>
+          <p class="text-xs text-muted mb-2">
+            Evolución semanal de las citas según estado (atendidas, ausentes, canceladas, etc.).
+          </p>
+          <div class="chart-container">
+            <canvas id="chLine"></canvas>
+          </div>
         </div>
       </div>
     </div>
+
     <div class="col-lg-4">
-      <div class="card">
-        <div class="card-header">Distribución por estado</div>
+      <div class="card mhl-card h-100">
+        <div class="mhl-card-header">
+          <i class="bi bi-pie-chart"></i>
+          <span>Distribución por estado</span>
+        </div>
         <div class="card-body">
-          <canvas id="chPie" height="120"></canvas>
+          <p class="text-xs text-muted mb-2">
+            Porcentaje de citas por estado dentro del rango seleccionado.
+          </p>
+          <div class="chart-container">
+            <canvas id="chPie"></canvas>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
 </div>
 
 <script>
 const $ = sel => document.querySelector(sel);
 let chLine, chPie;
 
+/* Paleta con orden “clínico”:
+   0: Atendidas (verde)
+   1: Ausentes (rojo)
+   2: Canceladas (amarillo)
+   3: Confirmadas (azul)
+   El resto se usa para otros estados si aparecen.
+*/
 function palette(n){
-  // paleta simple pero consistente
   const colors = [
-    '#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f',
-    '#edc948','#b07aa1','#ff9da7','#9c755f','#bab0ab'
+    '#10b981', // verde  - atendidas
+    '#ef4444', // rojo   - ausentes
+    '#f59e0b', // amarillo - canceladas
+    '#3b82f6', // azul   - confirmadas
+    '#a855f7',
+    '#eab308',
+    '#0ea5e9',
+    '#22c55e',
+    '#facc15',
+    '#6b7280'
   ];
-  while(colors.length < n){ colors.push('#bab0ab'); }
+  while(colors.length < n){ colors.push('#6b7280'); }
   return colors.slice(0,n);
 }
 
@@ -91,7 +420,10 @@ function toDatasets(series, labels){
     data: series[est],
     borderColor: cols[i],
     backgroundColor: cols[i],
-    tension: .2
+    tension: .25,
+    fill: false,
+    pointRadius: 3,
+    pointHoverRadius: 5
   }));
 }
 
@@ -110,10 +442,19 @@ function renderCharts(data){
   chLine = new Chart($('#chLine'), {
     type: 'line',
     data: { labels, datasets },
-    options: { responsive: true, maintainAspectRatio: false }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } }
+      }
+    }
   });
 
-  // Pie
+  // Pie / Doughnut
   const distKeys = Object.keys(data.distribucion);
   const distVals = distKeys.map(k => data.distribucion[k]);
   if (chPie) chPie.destroy();
@@ -123,23 +464,37 @@ function renderCharts(data){
       labels: distKeys,
       datasets: [{ data: distVals, backgroundColor: palette(distKeys.length) }]
     },
-    options: { responsive: true, maintainAspectRatio: false }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' }
+      },
+      cutout: '60%'
+    }
   });
 }
 
 function renderKPIs(k){
-  $('#kpi-total').textContent = k.total;
-  $('#kpi-atendidas').textContent = k.atendidas;
-  $('#kpi-ausentes').textContent = k.ausentes;
-  $('#kpi-canceladas').textContent = k.canceladas;
+  $('#kpi-total').textContent       = k.total;
+  $('#kpi-atendidas').textContent   = k.atendidas;
+  $('#kpi-ausentes').textContent    = k.ausentes;
+  $('#kpi-canceladas').textContent  = k.canceladas;
   $('#kpi-confirmadas').textContent = k.confirmadas;
-  $('#kpi-asistencia').textContent = (k.tasa_asistencia ?? 0) + '%';
+  $('#kpi-asistencia').textContent  = (k.tasa_asistencia ?? 0) + '%';
 }
 
 async function boot(){
   const data = await fetchData();
   renderCharts(data);
   renderKPIs(data.kpis);
+
+  // Actualizar badge de rango (por si el backend ajusta fechas)
+  if (data.rango) {
+    const { desde, hasta } = data.rango;
+    const badge = document.getElementById('badge-rango');
+    if (badge) badge.textContent = `${desde} – ${hasta}`;
+  }
 }
 
 $('#filtros').addEventListener('submit', async (e) => {

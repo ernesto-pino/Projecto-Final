@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Acceso denegado – MiHora Lampa</title>
+  <link rel="icon" type="image/png" href="{% static 'core/img/logo_lampa.png' %}">
   <!-- Si tienes un CSS global, descomenta la siguiente línea -->
   <!-- <link rel="stylesheet" href="{% static 'core/css/base.css' %}"> -->
   <style>
@@ -91,7 +92,17 @@
     <div class="card" role="alert" aria-live="polite">
       <div class="icon" aria-hidden="true">🚫</div>
       <h2>Acceso denegado</h2>
-      <p>Tu usuario no posee el rol requerido para esta página.<br>Si crees que se trata de un error, contacta al administrador del sistema.</p>
+      <p>    {% if messages %}
+    <div class="alerts">
+      {% for m in messages %}
+      <br>
+      <div
+        class="alert {% if 'success' in m.tags %}alert-success{% elif 'error' in m.tags %}alert-error{% endif %}">
+        {{ m }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}<br>Si crees que se trata de un error, contacta al administrador del sistema.</p>
 
       <div class="meta">
         <span>Fecha: {% now "d/m/Y" %}</span>

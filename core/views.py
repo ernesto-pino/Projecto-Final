@@ -936,7 +936,7 @@ def acceso_denegado(request):
     return render(request, "core/html/acceso_denegado.html", status=403)
 
 
-@role_required("Administrador")
+@role_required("Recepción")
 def recep_kpis(request):
     """
     Renderiza el dashboard. El JS interno llama a /kpis/data/ para traer las métricas.
@@ -953,7 +953,7 @@ def recep_kpis(request):
         "default_hasta": default_hasta,
     })
 
-@role_required("Administrador")
+@role_required("Recepción")
 def recep_kpis_data(request):
     """
     Devuelve JSON con KPIs por rango y (opcional) por profesional.

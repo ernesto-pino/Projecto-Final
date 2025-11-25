@@ -1,9 +1,11 @@
+{% load static %}
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mi disponibilidad – MiHora Lampa</title>
+  <link rel="icon" type="image/png" href="{% static 'core/img/logo_lampa.png' %}">
   <style>
     :root{
       --cosam-primary:#1769aa;
@@ -185,7 +187,6 @@
                 <label class="label">Ubicación</label>
                 {{ form.ubicacion }}
                 {% if form.ubicacion.errors %}<div class="error">{{ form.ubicacion.errors }}</div>{% endif %}
-                <div class="hint">Ej.: “Sala 2”, “Box 3” o “Teleconsulta”.</div>
               </div>
 
               {% if form.non_field_errors %}
